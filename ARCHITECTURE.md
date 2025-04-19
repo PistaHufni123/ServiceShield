@@ -15,6 +15,22 @@ Key files:
 - **ServiceProtector.c**: Main implementation of the driver functionality
 - **ServiceProtector.inf**: Installation information file for the driver
 - **ServiceProtector.rc**: Resource script for version information
+- **trace.h**: Contains definitions for WPP tracing support
+
+The driver uses a global device reference approach to simplify device access across callbacks:
+
+```c
+// Global device reference in ServiceProtector.c
+WDFDEVICE g_Device = NULL;
+
+// In DriverEntry, after device creation:
+g_Device = device;
+
+// In callback functions, access the device directly:
+device = g_Device;
+```
+
+This approach eliminates the need for WdfDriverGetDevice calls and simplifies device access from asynchronous callbacks.
 
 ### 2. Data Structures
 
@@ -129,11 +145,32 @@ This code checks if access requests include rights that could be used to harm th
 
 ### 2. Service Process Identification
 
-The driver identifies the target service's process using a filename matching approach:
+The driver identifies the target service's process using a custom filename matching approach:
 
 ```c
 // Check if the process name ends with the service executable name
-if (RtlUnicodeStringEndsWithString(&processName, &targetServiceName, TRUE)) {
+// Using a custom implementation of string suffix comparison
+BOOLEAN nameMatches = FALSE;
+if (processName.Length >= targetServiceName.Length) {
+    PCWSTR processSuffix = (PCWSTR)((PCHAR)processName.Buffer + 
+        (processName.Length - targetServiceName.Length));
+    
+    // Compare the suffix - case insensitive comparison using RtlUpcaseUnicodeChar
+    // (Convert both strings to uppercase for proper comparison)
+    WCHAR processTemp[MAX_SERVICE_NAME_LENGTH];
+    WCHAR targetTemp[MAX_SERVICE_NAME_LENGTH];
+    
+    // Copy and convert to uppercase, making sure not to overflow buffers
+    for (ULONG i = 0; i < copyLength; i++) {
+        processTemp[i] = RtlUpcaseUnicodeChar(processSuffix[i]);
+        targetTemp[i] = RtlUpcaseUnicodeChar(targetServiceName.Buffer[i]);
+    }
+    
+    // Compare the strings
+    nameMatches = (wcscmp(processTemp, targetTemp) == 0);
+}
+
+if (nameMatches) {
     // Mark this process as our target for protection
     deviceContext->ServiceInfo.TargetProcessFound = TRUE;
     deviceContext->ServiceInfo.TargetProcessId = ProcessId;

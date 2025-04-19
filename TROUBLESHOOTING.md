@@ -4,6 +4,77 @@ This document provides solutions for common issues you might encounter when deve
 
 ## Compilation Errors
 
+### Missing WdfDriverGetDevice and RtlUnicodeStringEndsWithString Functions
+
+**Error:**
+```
+Error LNK2019 unresolved external symbol WdfDriverGetDevice referenced in function ProcessNotifyCallback
+Error LNK2019 unresolved external symbol __imp_RtlUnicodeStringEndsWithString referenced in function ProcessNotifyCallback
+```
+
+**Solution:**
+These errors occur when certain WDF functions or string utility functions are not properly linked into the driver. There are two approaches to fix this issue:
+
+1. **Global Device Reference Approach (Recommended):**
+   - Declare a global WDFDEVICE variable to store the device handle
+   - Initialize it in DriverEntry after device creation
+   - Use this global variable instead of WdfDriverGetDevice calls
+   
+   ```c
+   // At the top of your ServiceProtector.c file (after includes):
+   WDFDEVICE g_Device = NULL;
+   
+   // In DriverEntry, after WdfDeviceCreate:
+   g_Device = device;
+   
+   // Instead of using WdfDriverGetDevice:
+   device = g_Device;
+   ```
+
+2. **Custom String Comparison Implementation:**
+   - For RtlUnicodeStringEndsWithString issues, implement your own string comparison function
+   - Use RtlUpcaseUnicodeChar for proper case-insensitive comparison
+   
+   ```c
+   // Instead of RtlUnicodeStringEndsWithString, use:
+   BOOLEAN nameMatches = FALSE;
+   if (processName.Length >= targetServiceName.Length) {
+       PCWSTR processSuffix = (PCWSTR)((PCHAR)processName.Buffer + 
+           (processName.Length - targetServiceName.Length));
+       
+       // Compare with case insensitivity using RtlUpcaseUnicodeChar
+       // (See implementation in ServiceProtector.c)
+   }
+   ```
+
+3. **Project Configuration Fix:**
+   - Add <DriverSign> configuration with SHA256 as the file digest algorithm:
+   
+   ```xml
+   <DriverSign>
+     <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+   </DriverSign>
+   ```
+
+### Header File Not Found: wdfldr.h
+
+**Error:**
+```
+Error C1083 Cannot open include file: 'wdfldr.h': No such file or directory
+```
+
+**Solution:**
+This error occurs when attempting to include headers that may not be available in all WDK configurations. To fix this:
+
+1. **Remove the dependency:**
+   - Replace direct WDF loader function calls with alternative implementations
+   - Use global device references instead of WdfDriverGetDevice
+   - Avoid the need to include wdfldr.h entirely
+
+2. **Fix include paths:**
+   - Ensure proper WDK include paths are set in project properties
+   - If a specific header is truly needed, check the WDK install location
+
 ### Missing Process Access Rights Definitions
 
 **Error:**
