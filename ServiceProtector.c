@@ -39,7 +39,31 @@ DriverEntry(
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
 
-    status = WdfDriverCreate(DriverObject, RegistryPath, WDF_NO_OBJECT_ATTRIBUTES, &config, &driver);
+    // Initialize driver without using WDF function table directly
+    NTSTATUS status = STATUS_SUCCESS;
+    
+    // Set up driver unload routine
+    DriverObject->DriverUnload = ServiceProtectorEvtDriverUnload;
+    
+    // Set up IRP handlers if needed
+    DriverObject->MajorFunction[IRP_MJ_CREATE] = ServiceProtectorCreateClose;
+    DriverObject->MajorFunction[IRP_MJ_CLOSE] = ServiceProtectorCreateClose;
+    DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = ServiceProtectorDeviceControl;
+
+    // Create the device object
+    UNICODE_STRING deviceName;
+    RtlInitUnicodeString(&deviceName, L"\\Device\\ServiceProtector");
+    
+    status = IoCreateDevice(
+        DriverObject,
+        sizeof(DEVICE_CONTEXT),
+        &deviceName,
+        FILE_DEVICE_UNKNOWN,
+        0,
+        FALSE,
+        &g_Device
+    );
+    
     if (!NT_SUCCESS(status)) {
         return status;
     }

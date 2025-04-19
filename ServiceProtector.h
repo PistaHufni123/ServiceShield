@@ -41,5 +41,6 @@ typedef struct _DEVICE_CONTEXT {
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, GetDeviceContext)
 
 DRIVER_INITIALIZE DriverEntry;
-EVT_WDF_DRIVER_UNLOAD ServiceProtectorEvtDriverUnload;
-EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL ServiceProtectorEvtIoDeviceControl;
+VOID ServiceProtectorEvtDriverUnload(_In_ PDRIVER_OBJECT DriverObject);
+NTSTATUS ServiceProtectorCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
+NTSTATUS ServiceProtectorDeviceControl(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
