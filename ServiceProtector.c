@@ -327,8 +327,7 @@ UnregisterCallbacks(
 }
 
 // Safe wrapper that acts as a fail-safe in case of repeated BSODs
-VOID
-ActivateSafetyMode(VOID)
+VOID ActivateSafetyMode(VOID)
 {
     // Set the global safety flag to disable all callbacks
     SERVICE_PROTECTOR_PRINT("!!! ACTIVATING DRIVER SAFETY MODE - PROTECTION DISABLED !!!");

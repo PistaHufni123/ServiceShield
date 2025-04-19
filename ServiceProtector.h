@@ -155,6 +155,9 @@ VOID ProcessNotifyCallback(
     _In_ PVOID CreateInfoPtr
 );
 
+// Safety mode activation function
+VOID ActivateSafetyMode(VOID);
+
 // Debug logging macros
 #if DBG
 #define SERVICE_PROTECTOR_PRINT(fmt, ...) \
