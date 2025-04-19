@@ -31,17 +31,6 @@ Environment:
 #include <wdf.h>
 #include <wdfdriver.h>  // For WDF driver functions
 
-// Define WDF synchronization scopes if not already defined
-#ifndef WdfSynchronizationScopeInvalid
-typedef enum _WDF_SYNCHRONIZATION_SCOPE {
-    WdfSynchronizationScopeInvalid = 0,
-    WdfSynchronizationScopeDevice,
-    WdfSynchronizationScopeQueue,
-    WdfSynchronizationScopeNone,
-    WdfSynchronizationScopeDriver
-} WDF_SYNCHRONIZATION_SCOPE, *PWDF_SYNCHRONIZATION_SCOPE;
-#endif
-
 // WDF function declarations will be handled via our global device approach
 // No need to include wdfldr.h which is causing inclusion errors
 
