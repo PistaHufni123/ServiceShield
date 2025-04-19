@@ -113,7 +113,7 @@ DriverEntry(
 
     // Create the WDF driver object with enhanced error checking
     SERVICE_PROTECTOR_PRINT("Creating WDF driver object");
-    
+
     // Validate WDF environment
     if (WdfFunctions == NULL) {
         SERVICE_PROTECTOR_PRINT("Critical Error: WDF function table is NULL");
@@ -425,6 +425,7 @@ PreOperationCallback(
     PEPROCESS targetProcess = NULL;
     HANDLE currentProcessId = NULL;
     BOOLEAN mutexAcquired = FALSE;
+    NTSTATUS status = STATUS_SUCCESS; // Initialize status here
 
     // Counter for tracking problems, helps enable safety mode after 
     // encountering multiple exceptions
@@ -463,8 +464,8 @@ PreOperationCallback(
             return OB_PREOP_SUCCESS;
         }
 
-        // Safe access to device context
         __try {
+            status = STATUS_SUCCESS;
             deviceContext = (PDEVICE_CONTEXT)RegistrationContext;
 
             // Verify context fields to ensure it's valid
@@ -475,6 +476,7 @@ PreOperationCallback(
             }
         } __except(EXCEPTION_EXECUTE_HANDLER) {
             SERVICE_PROTECTOR_PRINT("Exception accessing device context");
+            status = STATUS_ACCESS_VIOLATION;
             return OB_PREOP_SUCCESS;
         }
 
