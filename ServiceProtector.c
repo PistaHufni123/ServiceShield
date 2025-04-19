@@ -39,9 +39,19 @@ DriverEntry(
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
 
-    // Create the driver object
-    status = WdfDriverCreate(DriverObject, RegistryPath, WDF_NO_OBJECT_ATTRIBUTES, &config, &driver);
+    // Initialize WDF driver
+    WDF_OBJECT_ATTRIBUTES attributes;
+    WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+    
+    status = WdfDriverCreate(
+        DriverObject,
+        RegistryPath,
+        &attributes,        // Use initialized attributes instead of WDF_NO_OBJECT_ATTRIBUTES
+        &config,
+        &driver);
+    
     if (!NT_SUCCESS(status)) {
+        KdPrint(("WdfDriverCreate failed with status 0x%x\n", status));
         return status;
     }
     
