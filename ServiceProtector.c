@@ -182,11 +182,24 @@ DriverEntry(
     attributes.SynchronizationScope = WdfSynchronizationScopeDevice;
 
     // Additional device initialization with error checking
-    status = WdfDeviceInitSetDeviceType(deviceInit, FILE_DEVICE_UNKNOWN);
-    if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("WdfDeviceInitSetDeviceType failed with status 0x%x", status);
-        WdfDeviceInitFree(deviceInit);
-        return status;
+    if (deviceInit == NULL) {
+        SERVICE_PROTECTOR_PRINT("deviceInit is NULL before WdfDeviceInitSetDeviceType");
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    __try {
+        status = WdfDeviceInitSetDeviceType(deviceInit, FILE_DEVICE_UNKNOWN);
+        if (!NT_SUCCESS(status)) {
+            SERVICE_PROTECTOR_PRINT("WdfDeviceInitSetDeviceType failed with status 0x%x", status);
+            WdfDeviceInitFree(deviceInit);
+            return status;
+        }
+    } __except(EXCEPTION_EXECUTE_HANDLER) {
+        SERVICE_PROTECTOR_PRINT("Exception in WdfDeviceInitSetDeviceType");
+        if (deviceInit != NULL) {
+            WdfDeviceInitFree(deviceInit);
+        }
+        return STATUS_DRIVER_INTERNAL_ERROR;
     }
 
     status = WdfDeviceInitSetIoType(deviceInit, WdfDeviceIoBuffered);
