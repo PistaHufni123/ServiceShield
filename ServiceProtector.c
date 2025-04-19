@@ -147,24 +147,21 @@ ServiceProtectorDeviceControl(
 )
 {
     NTSTATUS status = STATUS_SUCCESS;
-    PIO_STACK_LOCATION irpSp;
     PDEVICE_CONTEXT deviceContext;
     PVOID inputBuffer = NULL;
-    ULONG inputBufferLength = 0;
+    
+    UNREFERENCED_PARAMETER(OutputBufferLength);
 
-    UNREFERENCED_PARAMETER(DeviceObject);
-
-    if (Irp == NULL) {
+    // Validate input parameters
+    if (InputBufferLength == 0) {
         return STATUS_INVALID_PARAMETER;
     }
 
-    irpSp = IoGetCurrentIrpStackLocation(Irp);
-    if (irpSp == NULL) {
-        status = STATUS_INVALID_PARAMETER;
-        goto Exit;
+    // Get input buffer
+    status = WdfRequestRetrieveInputBuffer(Request, InputBufferLength, &inputBuffer, NULL);
+    if (!NT_SUCCESS(status)) {
+        return status;
     }
-
-    inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
 
     switch (irpSp->Parameters.DeviceIoControl.IoControlCode) {
     case IOCTL_SERVICE_PROTECTOR_SET_TARGET:
@@ -205,10 +202,6 @@ ServiceProtectorDeviceControl(
         break;
     }
 
-Exit:
-    Irp->IoStatus.Status = status;
-    Irp->IoStatus.Information = 0;
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
-
+WdfRequestComplete(Request, status);
     return status;
 }
