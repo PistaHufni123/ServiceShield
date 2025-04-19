@@ -98,13 +98,30 @@ DriverEntry(
     config.DriverPoolTag = 'PSVC';
 
     // Create the WDF driver object
-    status = WdfDriverCreate(
-        DriverObject,
-        RegistryPath,
-        WDF_NO_OBJECT_ATTRIBUTES,
-        &config,
-        &driver
-    );
+    // Add validation for WDF function table
+    if (WdfFunctions == NULL) {
+        SERVICE_PROTECTOR_PRINT("WDF function table is NULL");
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    // Validate driver parameters
+    if (DriverObject == NULL || RegistryPath == NULL) {
+        SERVICE_PROTECTOR_PRINT("Invalid driver parameters");
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    __try {
+        status = WdfDriverCreate(
+            DriverObject,
+            RegistryPath,
+            WDF_NO_OBJECT_ATTRIBUTES,
+            &config,
+            &driver
+        );
+    } __except(EXCEPTION_EXECUTE_HANDLER) {
+        SERVICE_PROTECTOR_PRINT("Exception in WdfDriverCreate");
+        return STATUS_DRIVER_INTERNAL_ERROR;
+    }
 
     if (!NT_SUCCESS(status)) {
         SERVICE_PROTECTOR_PRINT("WdfDriverCreate failed with status 0x%x", status);
