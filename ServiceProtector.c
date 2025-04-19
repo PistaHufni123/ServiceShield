@@ -1068,7 +1068,8 @@ _In_ size_t OutputBufferLength,
                 // ProbeForRead doesn't return a value, it throws an exception if the buffer is invalid
                 // Cast to volatile VOID* to match the function declaration
                 ProbeForRead((volatile VOID*)inputBuffer, bufferSize, sizeof(WCHAR));
-                status = STATUS_SUCCESS;  // Set success status if ProbeForRead succeeds
+                // If we get here, ProbeForRead succeeded
+                status = STATUS_SUCCESS;
             } __except(EXCEPTION_EXECUTE_HANDLER) {
                 SERVICE_PROTECTOR_PRINT("Input buffer probe failed");
                 status = STATUS_ACCESS_VIOLATION;
