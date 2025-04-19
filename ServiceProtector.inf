@@ -14,10 +14,16 @@ PnpLockdown=1
 [DestinationDirs]
 DefaultDestDir = 12
 
-[DefaultInstall]
+[DefaultInstall.NTamd64]
 CopyFiles=ServiceProtector_CopyFiles
 
-[DefaultInstall.Services]
+[DefaultInstall.NTamd64.Services]
+AddService=%ServiceName%,0x00000800,ServiceProtector_Service_Inst
+
+[DefaultInstall.NTx86]
+CopyFiles=ServiceProtector_CopyFiles
+
+[DefaultInstall.NTx86.Services]
 AddService=%ServiceName%,0x00000800,ServiceProtector_Service_Inst
 
 [ServiceProtector_CopyFiles]

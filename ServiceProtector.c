@@ -16,6 +16,10 @@ Environment:
 
 #include "ServiceProtector.h"
 
+// Add trace headers
+#include "trace.h"
+#include "ServiceProtector.tmh"
+
 // Driver entry point
 NTSTATUS
 DriverEntry(
@@ -34,6 +38,9 @@ DriverEntry(
     WDFQUEUE queue;
     DECLARE_CONST_UNICODE_STRING(deviceName, L"\\Device\\ServiceProtector");
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, L"\\DosDevices\\ServiceProtector");
+
+    // Initialize WPP Tracing
+    WPP_INIT_TRACING(DriverObject, RegistryPath);
 
     SERVICE_PROTECTOR_PRINT("Driver initializing");
 
@@ -156,8 +163,6 @@ ServiceProtectorEvtDriverUnload(
     WDFDEVICE device;
     PDEVICE_CONTEXT deviceContext;
 
-    UNREFERENCED_PARAMETER(Driver);
-
     SERVICE_PROTECTOR_PRINT("Driver unloading");
 
     // Get the device context
@@ -171,6 +176,9 @@ ServiceProtectorEvtDriverUnload(
     UnregisterCallbacks(deviceContext);
 
     SERVICE_PROTECTOR_PRINT("Driver unloaded successfully");
+    
+    // Cleanup WPP Tracing
+    WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
 }
 
 // Register object callbacks

@@ -19,6 +19,18 @@ Environment:
 #include <ntddk.h>
 #include <wdf.h>
 #include <wdm.h>
+#include <winnt.h>
+
+// Define process access rights if not already defined
+#ifndef PROCESS_TERMINATE
+#define PROCESS_TERMINATE                  (0x0001)
+#endif
+#ifndef PROCESS_VM_WRITE
+#define PROCESS_VM_WRITE                   (0x0020)
+#endif
+#ifndef PROCESS_SUSPEND_RESUME
+#define PROCESS_SUSPEND_RESUME             (0x0800)
+#endif
 
 // IOCTL codes for user-mode communication
 #define IOCTL_SERVICE_PROTECTOR_SET_TARGET CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
