@@ -185,3 +185,71 @@ Exit:
         WdfRequestComplete(Request, status);
     }
 }
+
+
+// Handle Create/Close requests
+NTSTATUS
+ServiceProtectorCreateClose(
+    _In_ PDEVICE_OBJECT DeviceObject,
+    _In_ PIRP Irp
+)
+{
+    UNREFERENCED_PARAMETER(DeviceObject);
+
+    Irp->IoStatus.Status = STATUS_SUCCESS;
+    Irp->IoStatus.Information = 0;
+    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+    return STATUS_SUCCESS;
+}
+
+// Handle Device Control requests
+NTSTATUS
+ServiceProtectorDeviceControl(
+    _In_ PDEVICE_OBJECT DeviceObject,
+    _In_ PIRP Irp
+)
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    PIO_STACK_LOCATION irpSp;
+    PDEVICE_CONTEXT deviceContext;
+    PVOID inputBuffer = NULL;
+    ULONG inputBufferLength = 0;
+
+    UNREFERENCED_PARAMETER(DeviceObject);
+
+    irpSp = IoGetCurrentIrpStackLocation(Irp);
+    inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
+
+    switch (irpSp->Parameters.DeviceIoControl.IoControlCode) {
+    case IOCTL_SERVICE_PROTECTOR_SET_TARGET:
+        if (inputBufferLength == 0) {
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        inputBuffer = Irp->AssociatedIrp.SystemBuffer;
+        if (inputBuffer == NULL) {
+            status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        deviceContext = GetDeviceContext(g_Device);
+        
+        ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
+        RtlZeroMemory(deviceContext->ServiceInfo.ServiceName, sizeof(deviceContext->ServiceInfo.ServiceName));
+        RtlCopyMemory(deviceContext->ServiceInfo.ServiceName, inputBuffer, min(inputBufferLength, sizeof(deviceContext->ServiceInfo.ServiceName) - sizeof(WCHAR)));
+        ExReleaseFastMutex(&deviceContext->ServiceInfoMutex);
+        break;
+
+    default:
+        status = STATUS_INVALID_DEVICE_REQUEST;
+        break;
+    }
+
+    Irp->IoStatus.Status = status;
+    Irp->IoStatus.Information = 0;
+    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+    return status;
+}
