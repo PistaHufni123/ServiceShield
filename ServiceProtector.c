@@ -157,16 +157,21 @@ ServiceProtectorDeviceControl(
     NTSTATUS status = STATUS_SUCCESS;
     PDEVICE_CONTEXT deviceContext;
     PVOID inputBuffer = NULL;
+    size_t inputBufferLength = 0;
     
-    UNREFERENCED_PARAMETER(OutputBufferLength);
+    // Get input buffer length
+    status = WdfRequestGetInputBufferLength(Request, &inputBufferLength);
+    if (!NT_SUCCESS(status)) {
+        return status;
+    }
 
     // Validate input parameters
-    if (InputBufferLength == 0) {
+    if (inputBufferLength == 0) {
         return STATUS_INVALID_PARAMETER;
     }
 
     // Get input buffer
-    status = WdfRequestRetrieveInputBuffer(Request, InputBufferLength, &inputBuffer, NULL);
+    status = WdfRequestRetrieveInputBuffer(Request, inputBufferLength, &inputBuffer, NULL);
     if (!NT_SUCCESS(status)) {
         return status;
     }
@@ -180,7 +185,7 @@ ServiceProtectorDeviceControl(
             break;
         }
 
-        inputBuffer = Irp->AssociatedIrp.SystemBuffer;
+        // Use the buffer we already retrieved
         if (inputBuffer == NULL) {
             status = STATUS_INVALID_PARAMETER;
             break;
