@@ -150,7 +150,7 @@ ServiceProtectorDeviceControl(
     PDEVICE_CONTEXT deviceContext;
     PVOID inputBuffer = NULL;
     
-    UNREFERENCED_PARAMETER(Queue);
+    
     UNREFERENCED_PARAMETER(OutputBufferLength);
     
     // Validate input parameters
