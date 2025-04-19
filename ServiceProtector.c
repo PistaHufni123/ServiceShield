@@ -1,17 +1,17 @@
 /*++
-
-Module Name:
-
-    ServiceProtector.c
-
-Abstract:
-
-    Implementation of the ServiceProtector driver
-
-Environment:
-
-    Kernel mode
-
+*
+*Module Name:
+*
+*    ServiceProtector.c
+*
+*Abstract:
+*
+*    Implementation of the ServiceProtector driver
+*
+*Environment:
+*
+*    Kernel mode
+*
 --*/
 
 // Define Windows version and architecture targets for kernel-mode driver
@@ -28,8 +28,6 @@ Environment:
 // Global device reference to avoid WdfDriverGetDevice usage
 WDFDEVICE g_Device = NULL;
 
-// Global flag to disable all callbacks if BSOD is detected
-volatile LONG g_DriverSafetyMode = 0;
 
 // The following include is required for WPP tracing
 // This will be auto-generated during compilation by the WPP preprocessor
@@ -46,7 +44,7 @@ VOID ActivateSafetyMode(VOID)
 }
 
 // Helper function for memory validation with fail-safe
-BOOLEAN IsMemoryCorrupted(PVOID Memory, SIZE_T Size) 
+BOOLEAN IsMemoryCorrupted(PVOID Memory, SIZE_T Size)
 {
     if (Memory == NULL || Size == 0) {
         return TRUE; // Consider null memory as corrupted
@@ -59,7 +57,7 @@ BOOLEAN IsMemoryCorrupted(PVOID Memory, SIZE_T Size)
         if (Size > 1) {
             volatile BYTE lastByte = *((BYTE*)Memory + (Size - 1));
             // Prevent compiler from optimizing out
-            if ((firstByte == 0 && lastByte == 0) || 
+            if ((firstByte == 0 && lastByte == 0) ||
                 (firstByte != 0 && lastByte != 0)) {
                 // Just a dummy check to make the compiler use the values
             }
@@ -73,6 +71,7 @@ BOOLEAN IsMemoryCorrupted(PVOID Memory, SIZE_T Size)
     }
 }
 
+
 // Driver entry point
 NTSTATUS
 DriverEntry(
@@ -85,10 +84,7 @@ DriverEntry(
     WDFDRIVER driver;
     PWDFDEVICE_INIT deviceInit;
     WDFDEVICE device;
-    WDF_OBJECT_ATTRIBUTES deviceAttributes;
-    WDF_IO_QUEUE_CONFIG ioQueueConfig;
     PDEVICE_CONTEXT deviceContext;
-    WDFQUEUE queue;
     DECLARE_CONST_UNICODE_STRING(deviceName, L"\\Device\\ServiceProtector");
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, L"\\DosDevices\\ServiceProtector");
 
@@ -100,221 +96,52 @@ DriverEntry(
     SERVICE_PROTECTOR_PRINT("Driver initializing");
 
     // Initialize the driver configuration
-    // Initialize driver configuration
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
-    config.DriverPoolTag = 'PSVC';
 
-    // Set additional WDF attributes for the driver
-    WDF_OBJECT_ATTRIBUTES driverAttributes;
-    WDF_OBJECT_ATTRIBUTES_INIT(&driverAttributes);
-    driverAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-
-    // Create the WDF driver object with enhanced error checking
-    SERVICE_PROTECTOR_PRINT("Creating WDF driver object");
-
-    // Validate WDF environment
-    if (WdfFunctions == NULL) {
-        SERVICE_PROTECTOR_PRINT("Critical Error: WDF function table is NULL");
-        return STATUS_DRIVER_INTERNAL_ERROR;
-    }
-
-    // Validate driver parameters
-    if (DriverObject == NULL || RegistryPath == NULL) {
-        SERVICE_PROTECTOR_PRINT("Invalid driver parameters");
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    __try {
-        status = WdfDriverCreate(
-            DriverObject,
-            RegistryPath,
-            WDF_NO_OBJECT_ATTRIBUTES,
-            &config,
-            &driver
-        );
-    } __except(EXCEPTION_EXECUTE_HANDLER) {
-        SERVICE_PROTECTOR_PRINT("Exception in WdfDriverCreate");
-        return STATUS_DRIVER_INTERNAL_ERROR;
-    }
-
+    status = WdfDriverCreate(DriverObject, RegistryPath, WDF_NO_OBJECT_ATTRIBUTES, &config, &driver);
     if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("WdfDriverCreate failed with status 0x%x", status);
         return status;
     }
 
-    // Create a device
     deviceInit = WdfControlDeviceInitAllocate(driver, &SDDL_DEVOBJ_SYS_ALL_ADM_ALL);
     if (deviceInit == NULL) {
-        SERVICE_PROTECTOR_PRINT("WdfControlDeviceInitAllocate failed");
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    // Set device name
     status = WdfDeviceInitAssignName(deviceInit, &deviceName);
     if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("WdfDeviceInitAssignName failed with status 0x%x", status);
         WdfDeviceInitFree(deviceInit);
         return status;
     }
 
-    // Set file object callbacks
-    WDF_FILEOBJECT_CONFIG fileConfig;
-    WDF_FILEOBJECT_CONFIG_INIT(&fileConfig, 
-                               WDF_NO_EVENT_CALLBACK,  // No create callback
-                               WDF_NO_EVENT_CALLBACK,  // No close callback
-                               WDF_NO_EVENT_CALLBACK); // No cleanup callback
-
-    fileConfig.FileObjectClass = WdfFileObjectCanBeOptional;
-
-    WdfDeviceInitSetFileObjectConfig(
-        deviceInit,
-        &fileConfig,
-        WDF_NO_OBJECT_ATTRIBUTES
-    );
-
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
-
-    // Create the device with enhanced error handling and verification
     WDF_OBJECT_ATTRIBUTES attributes;
-    WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
-    attributes.SynchronizationScope = WdfSynchronizationScopeDevice;
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&attributes, DEVICE_CONTEXT);
 
-    // Additional device initialization with error checking
-    if (deviceInit == NULL) {
-        SERVICE_PROTECTOR_PRINT("deviceInit is NULL before WdfDeviceInitSetDeviceType");
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    __try {
-        status = WdfDeviceInitSetDeviceType(deviceInit, FILE_DEVICE_UNKNOWN);
-        if (!NT_SUCCESS(status)) {
-            SERVICE_PROTECTOR_PRINT("WdfDeviceInitSetDeviceType failed with status 0x%x", status);
-            WdfDeviceInitFree(deviceInit);
-            return status;
-        }
-    } __except(EXCEPTION_EXECUTE_HANDLER) {
-        SERVICE_PROTECTOR_PRINT("Exception in WdfDeviceInitSetDeviceType");
-        if (deviceInit != NULL) {
-            WdfDeviceInitFree(deviceInit);
-        }
-        return STATUS_DRIVER_INTERNAL_ERROR;
-    }
-
-    status = WdfDeviceInitSetIoType(deviceInit, WdfDeviceIoBuffered);
-    if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("WdfDeviceInitSetIoType failed with status 0x%x", status);
-        WdfDeviceInitFree(deviceInit);
-        return status;
-    }
-
-    // Set exclusive access to prevent multiple opens
-    WdfDeviceInitSetExclusive(deviceInit, TRUE);
-
-    SERVICE_PROTECTOR_PRINT("Creating WDF device object");
     status = WdfDeviceCreate(&deviceInit, &attributes, &device);
     if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("WdfDeviceCreate failed with status 0x%x", status);
-        if (deviceInit != NULL) {
-            WdfDeviceInitFree(deviceInit);
-        }
+        WdfDeviceInitFree(deviceInit);
         return status;
     }
 
-    // Verify device creation and initialization
-    if (device == NULL) {
-        SERVICE_PROTECTOR_PRINT("Device creation succeeded but handle is NULL");
-        WdfDeviceInitFree(deviceInit);
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    // Set device characteristics
-    WdfDeviceSetCharacteristics(device, FILE_DEVICE_SECURE_OPEN);
-
-    // Verify device initialization
-    if (device == NULL) {
-        SERVICE_PROTECTOR_PRINT("Device handle is NULL after creation");
-        WdfDeviceInitFree(deviceInit);
-        return STATUS_DEVICE_NOT_CONNECTED;
-    }
-
-    // Initialize device context
+    g_Device = device;
     deviceContext = GetDeviceContext(device);
-    if (deviceContext == NULL) {
-        SERVICE_PROTECTOR_PRINT("Failed to get device context");
-        return STATUS_DEVICE_NOT_CONNECTED;
-    }
     RtlZeroMemory(deviceContext, sizeof(DEVICE_CONTEXT));
-
-    // Store the device handle in our global variable with validation
-    if (device != NULL) {
-        g_Device = device;
-        SERVICE_PROTECTOR_PRINT("Device created successfully");
-    } else {
-        SERVICE_PROTECTOR_PRINT("Device handle is NULL after creation");
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    // Verify device was created properly
-    if (g_Device == NULL) {
-        SERVICE_PROTECTOR_PRINT("Global device handle is NULL");
-        return STATUS_DEVICE_NOT_CONNECTED;
-    }
-
-    // Create symbolic link
-    status = WdfDeviceCreateSymbolicLink(device, &symbolicLinkName);
-    if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("WdfDeviceCreateSymbolicLink failed with status 0x%x", status);
-        return status;
-    }
-
-    // Initialize the device context
-    deviceContext = GetDeviceContext(device);
     deviceContext->Device = device;
-    deviceContext->ServiceInfo.TargetProcessFound = FALSE;
-    deviceContext->ServiceInfo.TargetProcessId = NULL;
-    RtlZeroMemory(deviceContext->ServiceInfo.ServiceName, sizeof(deviceContext->ServiceInfo.ServiceName));
-    deviceContext->ProcessCallback.Registered = FALSE;
-    deviceContext->ProcessCallback.RegistrationHandle = NULL;
-    deviceContext->ThreadCallback.Registered = FALSE;
-    deviceContext->ThreadCallback.RegistrationHandle = NULL;
     ExInitializeFastMutex(&deviceContext->ServiceInfoMutex);
 
-    // Configure the default I/O queue
-    WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&ioQueueConfig, WdfIoQueueDispatchSequential);
-    ioQueueConfig.EvtIoDeviceControl = ServiceProtectorEvtIoDeviceControl;
-    ioQueueConfig.EvtIoStop = WdfIoQueueStopSynchronously;
-
-    status = WdfIoQueueCreate(
-        device,
-        &ioQueueConfig,
-        WDF_NO_OBJECT_ATTRIBUTES,
-        &queue
-    );
-
+    status = WdfDeviceCreateSymbolicLink(device, &symbolicLinkName);
     if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("WdfIoQueueCreate failed with status 0x%x", status);
         return status;
     }
 
-    // Register for process notifications
-    status = PsSetCreateProcessNotifyRoutineEx(ProcessNotifyCallback, FALSE);
-    if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("PsSetCreateProcessNotifyRoutineEx failed with status 0x%x", status);
-        return status;
-    }
-
-    // Register the object callbacks
     status = RegisterCallbacks(deviceContext);
     if (!NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("RegisterCallbacks failed with status 0x%x", status);
-        PsSetCreateProcessNotifyRoutineEx(ProcessNotifyCallback, TRUE);
         return status;
     }
 
     WdfControlFinishInitializing(device);
-
     SERVICE_PROTECTOR_PRINT("Driver initialized successfully");
     return STATUS_SUCCESS;
 }
@@ -325,33 +152,17 @@ ServiceProtectorEvtDriverUnload(
     _In_ WDFDRIVER Driver
 )
 {
-    WDFDEVICE device;
-    PDEVICE_CONTEXT deviceContext;
-
-    SERVICE_PROTECTOR_PRINT("Driver unloading");
-
-    // Get the device context from the driver
-    // For this driver, we've only created one device, so we'll use a global reference
-    device = g_Device;
-    if (device == NULL) {
-        SERVICE_PROTECTOR_PRINT("No device found for driver");
-        return;
+    UNREFERENCED_PARAMETER(Driver);
+    if (g_Device != NULL) {
+        PDEVICE_CONTEXT deviceContext = GetDeviceContext(g_Device);
+        UnregisterCallbacks(deviceContext);
     }
-
-    deviceContext = GetDeviceContext(device);
-
-    // Unregister process notifications
-    PsSetCreateProcessNotifyRoutineEx(ProcessNotifyCallback, TRUE);
-
-    // Unregister callbacks
-    UnregisterCallbacks(deviceContext);
-
-    SERVICE_PROTECTOR_PRINT("Driver unloaded successfully");
-
     // Cleanup WPP Tracing
 #ifdef WPP_ENABLED
     WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
 #endif
+    SERVICE_PROTECTOR_PRINT("Driver unloading");
+
 }
 
 // Register object callbacks
@@ -360,39 +171,25 @@ RegisterCallbacks(
     _In_ PDEVICE_CONTEXT DeviceContext
 )
 {
-    NTSTATUS status;
-    OB_CALLBACK_REGISTRATION callbackRegistration;
-    OB_OPERATION_REGISTRATION operationRegistration[2];
+    OB_CALLBACK_REGISTRATION callbackRegistration = {0};
+    OB_OPERATION_REGISTRATION operationRegistration = {0};
 
-    // Setup operation registration for process objects
-    operationRegistration[0].ObjectType = PsProcessType;
-    operationRegistration[0].Operations = OB_OPERATION_HANDLE_CREATE | OB_OPERATION_HANDLE_DUPLICATE;
-    operationRegistration[0].PreOperation = PreOperationCallback;
-    operationRegistration[0].PostOperation = NULL;
+    operationRegistration.ObjectType = PsProcessType;
+    operationRegistration.Operations = OB_OPERATION_HANDLE_CREATE;
+    operationRegistration.PreOperation = PreOperationCallback;
 
-    // Setup operation registration for thread objects
-    operationRegistration[1].ObjectType = PsThreadType;
-    operationRegistration[1].Operations = OB_OPERATION_HANDLE_CREATE | OB_OPERATION_HANDLE_DUPLICATE;
-    operationRegistration[1].PreOperation = PreOperationCallback;
-    operationRegistration[1].PostOperation = NULL;
-
-    // Setup callback registration
     callbackRegistration.Version = OB_FLT_REGISTRATION_VERSION;
-    callbackRegistration.OperationRegistrationCount = 2;
+    callbackRegistration.OperationRegistrationCount = 1;
     callbackRegistration.RegistrationContext = DeviceContext;
-    callbackRegistration.OperationRegistration = operationRegistration;
-    RtlInitUnicodeString(&callbackRegistration.Altitude, L"320000");
+    callbackRegistration.OperationRegistration = &operationRegistration;
 
-    // Register the callbacks
-    status = ObRegisterCallbacks(&callbackRegistration, &DeviceContext->ProcessCallback.RegistrationHandle);
+    NTSTATUS status = ObRegisterCallbacks(&callbackRegistration, &DeviceContext->RegistrationHandle);
     if (NT_SUCCESS(status)) {
-        DeviceContext->ProcessCallback.Registered = TRUE;
         SERVICE_PROTECTOR_PRINT("Object callbacks registered successfully");
     }
     else {
         SERVICE_PROTECTOR_PRINT("ObRegisterCallbacks failed with status 0x%x", status);
     }
-
     return status;
 }
 
@@ -402,18 +199,10 @@ UnregisterCallbacks(
     _In_ PDEVICE_CONTEXT DeviceContext
 )
 {
-    if (DeviceContext->ProcessCallback.Registered && DeviceContext->ProcessCallback.RegistrationHandle != NULL) {
-        ObUnRegisterCallbacks(DeviceContext->ProcessCallback.RegistrationHandle);
-        DeviceContext->ProcessCallback.RegistrationHandle = NULL;
-        DeviceContext->ProcessCallback.Registered = FALSE;
+    if (DeviceContext->RegistrationHandle != NULL) {
+        ObUnRegisterCallbacks(DeviceContext->RegistrationHandle);
+        DeviceContext->RegistrationHandle = NULL;
         SERVICE_PROTECTOR_PRINT("Process callbacks unregistered");
-    }
-
-    if (DeviceContext->ThreadCallback.Registered && DeviceContext->ThreadCallback.RegistrationHandle != NULL) {
-        ObUnRegisterCallbacks(DeviceContext->ThreadCallback.RegistrationHandle);
-        DeviceContext->ThreadCallback.RegistrationHandle = NULL;
-        DeviceContext->ThreadCallback.Registered = FALSE;
-        SERVICE_PROTECTOR_PRINT("Thread callbacks unregistered");
     }
 }
 
@@ -424,297 +213,21 @@ PreOperationCallback(
     _Inout_ POB_PRE_OPERATION_INFORMATION PreInfo
 )
 {
-    // SAFETY FIRST: Check global safety mode flag
-    if (InterlockedCompareExchange(&g_DriverSafetyMode, 0, 0) == 1) {
-        // Driver is in safety mode - return success without doing anything
-        return OB_PREOP_SUCCESS;
+    PDEVICE_CONTEXT deviceContext = (PDEVICE_CONTEXT)RegistrationContext;
+
+    if (PreInfo->ObjectType == PsProcessType) {
+        ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
+
+        if (deviceContext->ServiceInfo.TargetProcessFound &&
+            deviceContext->ServiceInfo.TargetProcessId == PsGetProcessId((PEPROCESS)PreInfo->Object)) {
+
+            ACCESS_MASK deniedAccess = PROCESS_TERMINATE | PROCESS_VM_WRITE | PROCESS_SUSPEND_RESUME;
+            PreInfo->Parameters->CreateHandleInformation.DesiredAccess &= ~deniedAccess;
+        }
+
+        ExReleaseFastMutex(&deviceContext->ServiceInfoMutex);
     }
 
-    // Variables declared at the top level for structured exception handling
-    PDEVICE_CONTEXT deviceContext = NULL;
-    ACCESS_MASK deniedAccess = 0;
-    PACCESS_MASK desiredAccess = NULL;
-    HANDLE targetProcessId = NULL;
-    PEPROCESS targetProcess = NULL;
-    HANDLE currentProcessId = NULL;
-    BOOLEAN mutexAcquired = FALSE;
-    NTSTATUS status = STATUS_SUCCESS; // Initialize status here
-
-    // Counter for tracking problems, helps enable safety mode after 
-    // encountering multiple exceptions
-    static volatile LONG exceptionCounter = 0;
-
-    // Use exception handling to guard ALL operations
-    __try {
-        // Track failures - if we get too many exceptions, go into safe mode
-        if (InterlockedIncrement(&exceptionCounter) > 5) {
-            ActivateSafetyMode();
-            return OB_PREOP_SUCCESS;
-        }
-        // Basic null pointer checks - Do NOT proceed if anything is missing
-        if (PreInfo == NULL || 
-            PsProcessType == NULL || 
-            RegistrationContext == NULL) {
-            SERVICE_PROTECTOR_PRINT("NULL essential parameters in PreOperationCallback");
-            return OB_PREOP_SUCCESS;
-        }
-
-        // Additional pointer validations
-        if (PreInfo->ObjectType == NULL) {
-            SERVICE_PROTECTOR_PRINT("NULL ObjectType");
-            return OB_PREOP_SUCCESS;
-        }
-
-        if (PreInfo->Object == NULL) {
-            SERVICE_PROTECTOR_PRINT("NULL Object pointer");
-            return OB_PREOP_SUCCESS;
-        }
-
-        // Check for corrupted PreInfo memory structures
-        if (IsMemoryCorrupted(PreInfo, sizeof(OB_PRE_OPERATION_INFORMATION))) {
-            SERVICE_PROTECTOR_PRINT("PreInfo memory corruption detected");
-            ActivateSafetyMode(); // Critical failure, immediately activate safety mode
-            return OB_PREOP_SUCCESS;
-        }
-
-        __try {
-            status = STATUS_SUCCESS;
-            deviceContext = (PDEVICE_CONTEXT)RegistrationContext;
-
-            // Verify context fields to ensure it's valid
-            if (deviceContext == NULL ||
-                deviceContext->Device == NULL) {
-                SERVICE_PROTECTOR_PRINT("Invalid deviceContext");
-                return OB_PREOP_SUCCESS;
-            }
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            SERVICE_PROTECTOR_PRINT("Exception accessing device context");
-            status = STATUS_ACCESS_VIOLATION;
-            return OB_PREOP_SUCCESS;
-        }
-
-        // Process protection logic - only for process objects
-        // Safe comparison for object types
-        BOOLEAN isProcessObject = FALSE;
-
-        __try {
-            isProcessObject = (PreInfo->ObjectType == *PsProcessType);
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            SERVICE_PROTECTOR_PRINT("Exception comparing object types");
-            return OB_PREOP_SUCCESS;
-        }
-
-        if (!isProcessObject) {
-            // Not a process object - nothing to do
-            return OB_PREOP_SUCCESS;
-        }
-
-        // Get the process ID with safe exception handling
-        __try {
-            targetProcess = (PEPROCESS)PreInfo->Object;
-
-            if (targetProcess == NULL) {
-                SERVICE_PROTECTOR_PRINT("NULL target process");
-                return OB_PREOP_SUCCESS;
-            }
-
-            targetProcessId = PsGetProcessId(targetProcess);
-
-            if (targetProcessId == NULL) {
-                SERVICE_PROTECTOR_PRINT("NULL process ID");
-                return OB_PREOP_SUCCESS;
-            }
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            SERVICE_PROTECTOR_PRINT("Exception getting process ID");
-            return OB_PREOP_SUCCESS;
-        }
-
-        // Safely access the mutex with timeout to prevent deadlocks
-        __try {
-            ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
-            mutexAcquired = TRUE;
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            SERVICE_PROTECTOR_PRINT("Exception acquiring mutex");
-            return OB_PREOP_SUCCESS;
-        }
-
-        // Main protection logic wrapped in try/finally
-        __try {
-            // Guard every field access with additional checks
-            if (!deviceContext->ServiceInfo.TargetProcessFound) {
-                __leave; // No target to protect
-            }
-
-            // Verify target process ID before comparison
-            if (deviceContext->ServiceInfo.TargetProcessId == NULL) {
-                __leave; // Invalid target process ID
-            }
-
-            // Safely compare process IDs
-            BOOLEAN isTargetProcess = FALSE;
-
-            __try {
-                isTargetProcess = (deviceContext->ServiceInfo.TargetProcessId == targetProcessId);
-            } __except(EXCEPTION_EXECUTE_HANDLER) {
-                SERVICE_PROTECTOR_PRINT("Exception comparing process IDs");
-                __leave;
-            }
-
-            if (!isTargetProcess) {
-                __leave; // Not our target process
-            }
-
-            // This is our protected process
-            // Safely check if this is kernel handle
-            BOOLEAN isUserModeAccess = FALSE;
-
-            __try {
-                isUserModeAccess = (PreInfo->KernelHandle == FALSE);
-            } __except(EXCEPTION_EXECUTE_HANDLER) {
-                SERVICE_PROTECTOR_PRINT("Exception checking KernelHandle");
-                __leave;
-            }
-
-            if (!isUserModeAccess) {
-                __leave; // Kernel handle - allow access
-            }
-
-            // Safely get current process ID for comparison
-            __try {
-                currentProcessId = PsGetCurrentProcessId();
-
-                if (currentProcessId == NULL) {
-                    SERVICE_PROTECTOR_PRINT("NULL current process ID");
-                    __leave;
-                }
-
-                // Allow access from the process itself
-                if (currentProcessId == targetProcessId) {
-                    __leave;
-                }
-            } __except(EXCEPTION_EXECUTE_HANDLER) {
-                SERVICE_PROTECTOR_PRINT("Exception getting current process ID");
-                __leave;
-            }
-
-            // User-mode access from another process - check parameters
-            BOOLEAN hasValidParameters = FALSE;
-
-            __try {
-                hasValidParameters = (PreInfo->Parameters != NULL);
-            } __except(EXCEPTION_EXECUTE_HANDLER) {
-                SERVICE_PROTECTOR_PRINT("Exception accessing Parameters");
-                __leave;
-            }
-
-            if (!hasValidParameters) {
-                SERVICE_PROTECTOR_PRINT("NULL Parameters");
-                __leave;
-            }
-
-            // Safely get the desired access pointer within exception handling
-            __try {
-                ULONG operation = 0;
-
-                // First safely read the operation value
-                operation = PreInfo->Operation;
-
-                // Check operation type
-                if (operation == OB_OPERATION_HANDLE_CREATE) {
-                    // Verify the field exists before accessing
-                    if (PreInfo->Parameters != NULL) {
-                        desiredAccess = &PreInfo->Parameters->CreateHandleInformation.DesiredAccess;
-                    }
-                }
-                else if (operation == OB_OPERATION_HANDLE_DUPLICATE) {
-                    // Verify the field exists before accessing
-                    if (PreInfo->Parameters != NULL) {
-                        desiredAccess = &PreInfo->Parameters->DuplicateHandleInformation.DesiredAccess;
-                    }
-                }
-                else {
-                    SERVICE_PROTECTOR_PRINT("Unknown operation: %d", operation);
-                    desiredAccess = NULL;
-                }
-            } __except(EXCEPTION_EXECUTE_HANDLER) {
-                SERVICE_PROTECTOR_PRINT("Exception getting desired access");
-                __leave;
-            }
-
-            // Only proceed if we have a valid access mask pointer
-            if (desiredAccess == NULL) {
-                __leave;
-            }
-
-            // Determine which access rights to deny
-            __try {
-                deniedAccess = 0;
-
-                // Prevent process termination
-                if (*desiredAccess & PROCESS_TERMINATE) {
-                    deniedAccess |= PROCESS_TERMINATE;
-                }
-
-                // Prevent memory writes (to prevent DLL injection)
-                if (*desiredAccess & PROCESS_VM_WRITE) {
-                    deniedAccess |= PROCESS_VM_WRITE;
-                }
-
-                // Prevent process suspension
-                if (*desiredAccess & PROCESS_SUSPEND_RESUME) {
-                    deniedAccess |= PROCESS_SUSPEND_RESUME;
-                }
-            } __except(EXCEPTION_EXECUTE_HANDLER) {
-                SERVICE_PROTECTOR_PRINT("Exception checking access rights");
-                __leave;
-            }
-
-            // Apply restrictions only if we're denying something
-            if (deniedAccess != 0) {
-                __try {
-                    // Log with safe access to service name
-                    WCHAR safeServiceName[MAX_SERVICE_NAME_LENGTH] = L"<unknown>";
-
-                    // Safely copy service name with bounds checking
-                    if (deviceContext->ServiceInfo.ServiceName[0] != L'\0') {
-                        wcsncpy(safeServiceName, 
-                                deviceContext->ServiceInfo.ServiceName, 
-                                MAX_SERVICE_NAME_LENGTH - 1);
-                        safeServiceName[MAX_SERVICE_NAME_LENGTH - 1] = L'\0';
-                    }
-
-                    SERVICE_PROTECTOR_PRINT(
-                        "Protected process %ws (PID: %lu) from access 0x%x by process %lu",
-                        safeServiceName,
-                        HandleToULong(targetProcessId),
-                        deniedAccess,
-                        HandleToULong(currentProcessId)
-                    );
-
-                    // Remove the denied access rights
-                    *desiredAccess &= ~deniedAccess;
-                } __except(EXCEPTION_EXECUTE_HANDLER) {
-                    SERVICE_PROTECTOR_PRINT("Exception removing access rights");
-                    // Continue execution - we tried our best to protect
-                }
-            }
-        }
-        __finally {
-            // Always release the mutex if it was acquired
-            if (mutexAcquired) {
-                __try {
-                    ExReleaseFastMutex(&deviceContext->ServiceInfoMutex);
-                } __except(EXCEPTION_EXECUTE_HANDLER) {
-                    SERVICE_PROTECTOR_PRINT("Exception releasing mutex");
-                }
-            }
-        }
-    } __except(EXCEPTION_EXECUTE_HANDLER) {
-        // Top-level exception handler - catch anything we missed
-        SERVICE_PROTECTOR_PRINT("Unhandled exception in PreOperationCallback");
-    }
-
-    // Always succeed - never fail the operation itself
     return OB_PREOP_SUCCESS;
 }
 
@@ -850,7 +363,7 @@ ProcessNotifyCallback(
             PCWSTR processSuffix = (PCWSTR)((PCHAR)processName.Buffer + suffixOffset);
 
             // Validate the suffix pointer is within bounds
-            if ((ULONG_PTR)processSuffix < (ULONG_PTR)processName.Buffer || 
+            if ((ULONG_PTR)processSuffix < (ULONG_PTR)processName.Buffer ||
                 (ULONG_PTR)processSuffix >= (ULONG_PTR)processName.Buffer + processName.Length) {
                 SERVICE_PROTECTOR_PRINT("Suffix pointer out of bounds");
                 __leave;
@@ -889,7 +402,7 @@ ProcessNotifyCallback(
             // Safe copy with character validation
             for (ULONG i = 0; i < copyLength; i++) {
                 // Bounds checking for each character
-                if (&processSuffix[i] < processSuffix || 
+                if (&processSuffix[i] < processSuffix ||
                     &targetServiceName.Buffer[i] < targetServiceName.Buffer) {
                     SERVICE_PROTECTOR_PRINT("Character access out of bounds");
                     __leave;
@@ -1085,10 +598,12 @@ ServiceProtectorEvtIoDeviceControl(
                     ProbeForRead(inputBuffer, bufferSize, sizeof(WCHAR));
                     // If we reach here, the probe succeeded
                     status = STATUS_SUCCESS;
-                } else {
+                }
+                else {
                     status = STATUS_INVALID_PARAMETER;
                 }
-            } __except(EXCEPTION_EXECUTE_HANDLER) {
+            }
+            __except (EXCEPTION_EXECUTE_HANDLER) {
                 SERVICE_PROTECTOR_PRINT("Input buffer probe failed");
                 status = STATUS_ACCESS_VIOLATION;
                 __leave;
@@ -1139,7 +654,8 @@ ServiceProtectorEvtIoDeviceControl(
                 try {
                     // Try to safely read the character
                     currentChar = ((PWCHAR)inputBuffer)[i];
-                } except(EXCEPTION_EXECUTE_HANDLER) {
+                }
+                except (EXCEPTION_EXECUTE_HANDLER) {
                     SERVICE_PROTECTOR_PRINT("Exception reading character at index %zu", i);
                     status = STATUS_ACCESS_VIOLATION;
                     __leave;
