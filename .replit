@@ -1,0 +1,34 @@
+modules = ["c"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Compile ServiceProtector Driver"
+
+[[workflows.workflow]]
+name = "Compile ServiceProtector Driver"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo \"Building ServiceProtector kernel driver project...\" && MSBuild.exe ServiceProtector.vcxproj /p:Configuration=Debug /p:Platform=x64 || echo \"Note: This is a Windows kernel driver project that requires the Windows Driver Kit (WDK) to properly build. The Replit environment doesn't support full Windows driver compilation, but the code can be reviewed and analyzed.\""
+waitForPort = 5000
+
+[deployment]
+run = ["sh", "-c", "echo \"Building ServiceProtector kernel driver project...\" && MSBuild.exe ServiceProtector.vcxproj /p:Configuration=Debug /p:Platform=x64 || echo \"Note: This is a Windows kernel driver project that requires the Windows Driver Kit (WDK) to properly build. The Replit environment doesn't support full Windows driver compilation, but the code can be reviewed and analyzed.\""]

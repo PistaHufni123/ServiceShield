@@ -1,0 +1,50 @@
+;
+; ServiceProtector.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
+Provider=%ManufacturerName%
+DriverVer=01/01/2023,1.0.0.1
+CatalogFile=ServiceProtector.cat
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[DefaultInstall]
+CopyFiles=ServiceProtector_CopyFiles
+
+[DefaultInstall.Services]
+AddService=%ServiceName%,0x00000800,ServiceProtector_Service_Inst
+
+[ServiceProtector_CopyFiles]
+ServiceProtector.sys
+
+[ServiceProtector_Service_Inst]
+DisplayName=%ServiceDisplayName%
+Description=%ServiceDescription%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%12%\ServiceProtector.sys
+LoadOrderGroup=FSFilter Activity Monitor
+AddReg=ServiceProtector_Parameters_AddReg
+
+[ServiceProtector_Parameters_AddReg]
+HKR,Parameters,ServiceToProtect,0x00000000,"spoolsv.exe"
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+ServiceProtector.sys = 1,,
+
+[Strings]
+ManufacturerName="ServiceProtector Driver"
+ServiceName="ServiceProtector"
+ServiceDisplayName="Service Protector Driver"
+ServiceDescription="Prevents unauthorized termination or modification of protected Windows services"
+DiskName="ServiceProtector Source Disk"
