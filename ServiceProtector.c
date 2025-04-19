@@ -168,8 +168,12 @@ DriverEntry(
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
-    // Create the device with enhanced error handling
-    status = WdfDeviceCreate(&deviceInit, &deviceAttributes, &device);
+    // Create the device with enhanced error handling and verification
+    WDF_OBJECT_ATTRIBUTES attributes;
+    WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+    attributes.SynchronizationScope = WdfSynchronizationScopeDevice;
+
+    status = WdfDeviceCreate(&deviceInit, &attributes, &device);
     if (!NT_SUCCESS(status)) {
         SERVICE_PROTECTOR_PRINT("WdfDeviceCreate failed with status 0x%x", status);
         WdfDeviceInitFree(deviceInit);
@@ -178,6 +182,21 @@ DriverEntry(
         #endif
         return status;
     }
+
+    // Verify device initialization
+    if (device == NULL) {
+        SERVICE_PROTECTOR_PRINT("Device handle is NULL after creation");
+        WdfDeviceInitFree(deviceInit);
+        return STATUS_DEVICE_NOT_CONNECTED;
+    }
+
+    // Initialize device context
+    PDEVICE_CONTEXT deviceContext = GetDeviceContext(device);
+    if (deviceContext == NULL) {
+        SERVICE_PROTECTOR_PRINT("Failed to get device context");
+        return STATUS_DEVICE_NOT_CONNECTED;
+    }
+    RtlZeroMemory(deviceContext, sizeof(DEVICE_CONTEXT));
     
     // Store the device handle in our global variable with validation
     if (device != NULL) {
