@@ -124,24 +124,26 @@ ServiceProtectorEvtDriverUnload(
 // Handle Create/Close requests
 NTSTATUS
 ServiceProtectorCreateClose(
-    _In_ PDEVICE_OBJECT DeviceObject,
-    _In_ PIRP Irp
+    _In_ WDFDEVICE Device,
+    _In_ WDFREQUEST Request,
+    _In_ WDFFILEOBJECT FileObject
 )
 {
-    UNREFERENCED_PARAMETER(DeviceObject);
+    UNREFERENCED_PARAMETER(Device);
+    UNREFERENCED_PARAMETER(FileObject);
 
-    Irp->IoStatus.Status = STATUS_SUCCESS;
-    Irp->IoStatus.Information = 0;
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
-
+    WdfRequestComplete(Request, STATUS_SUCCESS);
     return STATUS_SUCCESS;
 }
 
 // Handle Device Control requests
 NTSTATUS
 ServiceProtectorDeviceControl(
-    _In_ PDEVICE_OBJECT DeviceObject,
-    _In_ PIRP Irp
+    _In_ WDFQUEUE Queue,
+    _In_ WDFREQUEST Request,
+    _In_ size_t OutputBufferLength,
+    _In_ size_t InputBufferLength,
+    _In_ ULONG IoControlCode
 )
 {
     NTSTATUS status = STATUS_SUCCESS;

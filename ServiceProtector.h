@@ -44,5 +44,5 @@ WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, GetDeviceContext)
 // Driver function declarations
 DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_UNLOAD ServiceProtectorEvtDriverUnload;
-EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL ServiceProtectorDeviceControl;
-EVT_WDF_DEVICE_FILE_CREATE ServiceProtectorCreateClose;
+NTSTATUS ServiceProtectorCreateClose(_In_ WDFDEVICE Device, _In_ WDFREQUEST Request, _In_ WDFFILEOBJECT FileObject);
+NTSTATUS ServiceProtectorDeviceControl(_In_ WDFQUEUE Queue, _In_ WDFREQUEST Request, _In_ size_t OutputBufferLength, _In_ size_t InputBufferLength, _In_ ULONG IoControlCode);
