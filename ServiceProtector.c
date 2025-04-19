@@ -22,12 +22,6 @@
 // Include our driver header with proper include order
 #include "ServiceProtector.h"
 
-// Initialize global safety mode flag
-volatile LONG g_DriverSafetyMode = 0;
-
-// Add trace headers
-#include "trace.h"
-
 // Global device reference to avoid WdfDriverGetDevice usage
 WDFDEVICE g_Device = NULL;
 
@@ -90,12 +84,7 @@ DriverEntry(
     DECLARE_CONST_UNICODE_STRING(deviceName, L"\\Device\\ServiceProtector");
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, L"\\DosDevices\\ServiceProtector");
 
-    // Initialize WPP Tracing
-#ifdef WPP_ENABLED
-    WPP_INIT_TRACING(DriverObject, RegistryPath);
-#endif
-
-    SERVICE_PROTECTOR_PRINT("Driver initializing");
+    
 
     // Initialize the driver configuration
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
@@ -159,11 +148,7 @@ ServiceProtectorEvtDriverUnload(
         PDEVICE_CONTEXT deviceContext = GetDeviceContext(g_Device);
         UnregisterCallbacks(deviceContext);
     }
-    // Cleanup WPP Tracing
-#ifdef WPP_ENABLED
-    WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
-#endif
-    SERVICE_PROTECTOR_PRINT("Driver unloading");
+    
 
 }
 
