@@ -100,16 +100,24 @@ DriverEntry(
     SERVICE_PROTECTOR_PRINT("Driver initializing");
 
     // Initialize the driver configuration
+    // Initialize driver configuration
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
     config.DriverPoolTag = 'PSVC';
 
-    // Create the WDF driver object
-    // Add validation for WDF function table
+    // Set additional WDF attributes for the driver
+    WDF_OBJECT_ATTRIBUTES driverAttributes;
+    WDF_OBJECT_ATTRIBUTES_INIT(&driverAttributes);
+    driverAttributes.SynchronizationScope = WdfSynchronizationScopeDriver;
+
+    // Create the WDF driver object with enhanced error checking
+    SERVICE_PROTECTOR_PRINT("Creating WDF driver object");
+    
+    // Validate WDF environment
     if (WdfFunctions == NULL) {
-        SERVICE_PROTECTOR_PRINT("WDF function table is NULL");
-        return STATUS_UNSUCCESSFUL;
+        SERVICE_PROTECTOR_PRINT("Critical Error: WDF function table is NULL");
+        return STATUS_DRIVER_INTERNAL_ERROR;
     }
 
     // Validate driver parameters
@@ -173,10 +181,17 @@ DriverEntry(
     WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
     attributes.SynchronizationScope = WdfSynchronizationScopeDevice;
 
+    // Additional device initialization
+    WdfDeviceInitSetDeviceType(deviceInit, FILE_DEVICE_UNKNOWN);
+    WdfDeviceInitSetIoType(deviceInit, WdfDeviceIoBuffered);
+
+    SERVICE_PROTECTOR_PRINT("Creating WDF device object");
     status = WdfDeviceCreate(&deviceInit, &attributes, &device);
     if (!NT_SUCCESS(status)) {
         SERVICE_PROTECTOR_PRINT("WdfDeviceCreate failed with status 0x%x", status);
-        WdfDeviceInitFree(deviceInit);
+        if (deviceInit != NULL) {
+            WdfDeviceInitFree(deviceInit);
+        }
         return status;
     }
 
