@@ -113,7 +113,7 @@ DriverEntry(
 }
 
 // Driver unload handler
-VOID
+EVT_WDF_DRIVER_UNLOAD
 ServiceProtectorEvtDriverUnload(
     _In_ PDRIVER_OBJECT DriverObject
 )
