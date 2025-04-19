@@ -150,17 +150,16 @@ ServiceProtectorDeviceControl(
     PDEVICE_CONTEXT deviceContext;
     PVOID inputBuffer = NULL;
     
+    UNREFERENCED_PARAMETER(Queue);
     UNREFERENCED_PARAMETER(OutputBufferLength);
     
     // Validate input parameters
     if (InputBufferLength == 0) {
         return STATUS_INVALID_PARAMETER;
     }
-    PVOID inputBuffer = NULL;
-    size_t inputBufferLength = 0;
     
-    // Get input buffer length
-    status = WdfRequestGetInputBufferLength(Request, &inputBufferLength);
+    // Get input buffer
+    status = WdfRequestRetrieveInputBuffer(Request, InputBufferLength, &inputBuffer, NULL);
     if (!NT_SUCCESS(status)) {
         return status;
     }
