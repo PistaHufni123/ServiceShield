@@ -16,10 +16,38 @@ Environment:
 
 #pragma once
 
+// For kernel-mode drivers, we should ONLY use kernel headers, not um (user-mode) headers
+// Define target Windows version before including headers
+#define NTDDI_VERSION NTDDI_WIN10_RS1
+#define _WIN32_WINNT 0x0A00  // Windows 10
+
+// Base Windows kernel types and definitions
+#include <ntdef.h>
+#include <wdm.h>
 #include <ntddk.h>
 #include <wdf.h>
-#include <wdm.h>
-#include <winnt.h>
+
+// Fix for PPS_CREATE_NOTIFY_INFO definition (required for PsSetCreateProcessNotifyRoutineEx)
+#if !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
+#define _PS_CREATE_NOTIFY_INFO_DEFINED
+typedef struct _PS_CREATE_NOTIFY_INFO {
+    SIZE_T Size;
+    union {
+        ULONG Flags;
+        struct {
+            ULONG FileOpenNameAvailable : 1;
+            ULONG IsSubsystemProcess : 1;
+            ULONG Reserved : 30;
+        };
+    };
+    HANDLE ParentProcessId;
+    CLIENT_ID CreatingThreadId;
+    struct _FILE_OBJECT *FileObject;
+    PCUNICODE_STRING ImageFileName;
+    PCUNICODE_STRING CommandLine;
+    NTSTATUS CreationStatus;
+} PS_CREATE_NOTIFY_INFO, *PPS_CREATE_NOTIFY_INFO;
+#endif // !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
 
 // Define WPP_ENABLED based on the project settings
 // This will be defined when WPP tracing is enabled in the project

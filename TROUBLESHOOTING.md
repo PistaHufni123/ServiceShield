@@ -103,6 +103,111 @@ These errors occur because the Windows Software Tracing Preprocessor (WPP) is lo
    - In the driver entry point: `WPP_INIT_TRACING(DriverObject, RegistryPath);`
    - In the driver unload routine: `WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));`
    - Include the generated TMH file: `#include "ServiceProtector.tmh"`
+   - Conditionally include the TMH file: `#ifdef WPP_ENABLED #include "ServiceProtector.tmh" #endif`
+
+### Windows Type Definition Errors
+
+**Error:**
+```
+Error (active) E0020 identifier "WORD" is undefined
+Error (active) E0020 identifier "DWORD" is undefined
+Error (active) E0020 identifier "BYTE" is undefined
+```
+
+**Solution:**
+These errors occur because Windows kernel-mode drivers require specific header files and include order to properly define base Windows types.
+
+1. **Fix Header Include Order:**
+   - Kernel-mode drivers need the correct include order for Windows types to be defined properly
+   - Update your headers as follows:
+
+   ```c
+   // Define Windows version targets for kernel-mode driver
+   #define NTDDI_VERSION NTDDI_WIN10_RS1
+   #define _WIN32_WINNT 0x0A00  // Windows 10
+   
+   // Include order is important for kernel-mode drivers
+   #include <ntdef.h>      // Basic NT definitions
+   #include <wdm.h>        // Windows Driver Model
+   #include <ntddk.h>      // NT Driver Development Kit
+   #include <wdf.h>        // Windows Driver Framework
+   ```
+
+2. **Add Architecture Definitions:**
+   - Some headers need architecture information to properly define types
+   - Add the following before your includes:
+
+   ```c
+   // Define architecture (choose the appropriate one)
+   #define _X86_       // For 32-bit x86
+   // OR
+   #define _AMD64_     // For 64-bit x64
+   ```
+
+3. **Fix Project Configuration:**
+   - Update preprocessor definitions in the project file to include:
+   ```
+   _WIN64;_AMD64_;AMD64;NTDDI_VERSION=NTDDI_WIN10_RS1;_WIN32_WINNT=0x0A00
+   ```
+   - Add the kernel libraries to link against:
+   ```
+   $(DDK_LIB_PATH)\ntoskrnl.lib;$(DDK_LIB_PATH)\hal.lib;$(DDK_LIB_PATH)\wmilib.lib
+   ```
+   - Set `EntryPointSymbol` to `DriverEntry`
+   - Add the WDK include paths: `$(DDK_INC_PATH)`
+
+### Missing PPS_CREATE_NOTIFY_INFO Definition
+
+**Error:**
+```
+Error (active) E0020 identifier "PPS_CREATE_NOTIFY_INFO" is undefined
+```
+
+**Solution:**
+This error occurs because the PS_CREATE_NOTIFY_INFO structure and its pointer type are not defined in older WDK versions or might be missing in some headers.
+
+1. **Define the Structure:**
+   - Add the definition to your header file:
+
+   ```c
+   #if !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
+   #define _PS_CREATE_NOTIFY_INFO_DEFINED
+   typedef struct _PS_CREATE_NOTIFY_INFO {
+       SIZE_T Size;
+       union {
+           ULONG Flags;
+           struct {
+               ULONG FileOpenNameAvailable : 1;
+               ULONG IsSubsystemProcess : 1;
+               ULONG Reserved : 30;
+           };
+       };
+       HANDLE ParentProcessId;
+       CLIENT_ID CreatingThreadId;
+       struct _FILE_OBJECT *FileObject;
+       PCUNICODE_STRING ImageFileName;
+       PCUNICODE_STRING CommandLine;
+       NTSTATUS CreationStatus;
+   } PS_CREATE_NOTIFY_INFO, *PPS_CREATE_NOTIFY_INFO;
+   #endif
+   ```
+
+2. **Target Specific Windows Version:**
+   - Ensure you're targeting a Windows version that supports this feature:
+   ```c
+   #define NTDDI_VERSION NTDDI_WIN10_RS1
+   #define _WIN32_WINNT 0x0A00  // Windows 10
+   ```
+
+3. **Check Function Declaration:**
+   - Make sure your function prototype matches the exact required signature:
+   ```c
+   VOID ProcessNotifyCallback(
+       _In_ PEPROCESS Process,
+       _In_ HANDLE ProcessId,
+       _In_ PPS_CREATE_NOTIFY_INFO CreateInfo
+   );
+   ```
 
 ## Runtime Errors
 

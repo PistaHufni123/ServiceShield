@@ -14,6 +14,12 @@ Environment:
 
 --*/
 
+// Define Windows version and architecture targets for kernel-mode driver
+#define NTDDI_VERSION NTDDI_WIN10_RS1
+#define _WIN32_WINNT 0x0A00  // Windows 10
+#define _AMD64_            // For 64-bit driver (use _X86_ for 32-bit)
+
+// Include our driver header with proper include order
 #include "ServiceProtector.h"
 
 // Add trace headers

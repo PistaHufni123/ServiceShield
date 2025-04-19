@@ -1,0 +1,106 @@
+Severity	Code	Description	Project	File	Line	Suppression State	Details
+Error (active)	E0020	identifier "PPS_CREATE_NOTIFY_INFO" is undefined	ServiceProtector	C:\dev\ServiceProtector\ServiceShield_v1\ServiceShield\ServiceProtector.c	334		
+Error (active)	E0020	identifier "PPS_CREATE_NOTIFY_INFO" is undefined	ServiceProtector	C:\dev\ServiceProtector\ServiceShield_v1\ServiceShield\ServiceProtector.h	92		
+Error	C2220	the following warning is treated as an error	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	160		
+Error	C2011	'_PROCESSOR_NUMBER': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	660		
+Error	C2011	'_GROUP_AFFINITY': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	673		
+Error	C2011	'_GROUP_AFFINITY32': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	679		
+Error	C2011	'_GROUP_AFFINITY64': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	685		
+Error	C2054	expected '(' to follow 'WORD'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	731		
+Error	C2085	'DWORD': not in formal parameter list	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	732		
+Error	C2146	syntax error: missing ',' before identifier 'FLONG'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	732		
+Error	C2082	redefinition of formal parameter 'CCHAR'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	836		
+Error	C2085	'DWORD': not in formal parameter list	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	837		
+Error	C2146	syntax error: missing ',' before identifier 'LCID'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	837		
+Error	C2085	'PDWORD': not in formal parameter list	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	838		
+Error	C2146	syntax error: missing ',' before identifier 'PLCID'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	838		
+Error	C2082	redefinition of formal parameter 'LANGID'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	839		
+Error	C2011	'_FLOAT128': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	879		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	882		
+Error	C2011	'_LARGE_INTEGER': 'union' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	928		
+Error	C2011	'_ULARGE_INTEGER': 'union' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	948		
+Error	C2011	'_LUID': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	978		
+Error	C2011	'_LIST_ENTRY': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	1224		
+Error	C2011	'_SINGLE_LIST_ENTRY': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	1234		
+Error	C2011	'LIST_ENTRY32': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	1245		
+Error	C2011	'LIST_ENTRY64': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	1251		
+Error	C2011	'_M128A': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2693		
+Error	C2011	'_XSAVE_FORMAT': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2702		
+Error	C2011	'_XSAVE_CET_U_FORMAT': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2738		
+Error	C2011	'_XSAVE_ARM64_SVE_HEADER': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2747		
+Error	C2118	negative subscript	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2756		
+Error	C2011	'_XSAVE_AREA_HEADER': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2760		
+Error	C2011	'_XSAVE_AREA': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2766		
+Error	C2011	'_XSTATE_CONTEXT': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2773		
+Error	C2011	'_KERNEL_CET_CONTEXT': 'struct' type redefinition	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2792		
+Error	C2118	negative subscript	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2809		
+Error	C2061	syntax error: identifier 'DWORD'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2820		
+Error	C2061	syntax error: identifier 'DWORD'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2822		
+Error	C2061	syntax error: identifier 'EndAddress'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2823		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2823		
+Error	C2061	syntax error: identifier 'HandlerAddress'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2824		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2824		
+Error	C2061	syntax error: identifier 'JumpTarget'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2825		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2825		
+Error	C2059	syntax error: '}'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2826		
+Error	C2059	syntax error: '}'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2827		
+Error	C2143	syntax error: missing ')' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2983		
+Error	C2143	syntax error: missing '{' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2983		
+Error	C2146	syntax error: missing ';' before identifier 'Mask'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2984		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2985		
+Error	C2143	syntax error: missing ')' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2990		
+Error	C2143	syntax error: missing '{' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2990		
+Error	C2146	syntax error: missing ';' before identifier 'Mask'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2991		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2992		
+Error	C2143	syntax error: missing ')' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2997		
+Error	C2143	syntax error: missing '{' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2997		
+Error	C2371	'DWORD64': redefinition; different basic types	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2998		
+Error	C2146	syntax error: missing ';' before identifier 'Mask'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2998		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	2999		
+Error	C2143	syntax error: missing ')' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3004		
+Error	C2143	syntax error: missing '{' before '*'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3004		
+Error	C2371	'DWORD64': redefinition; different basic types	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3005		
+Error	C2146	syntax error: missing ';' before identifier 'Mask'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3005		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3006		
+Error	C2084	function 'LONG _InlineInterlockedAdd(volatile LONG *,LONG)' already has a body	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3228		
+Error	C2084	function 'LONG64 _InlineInterlockedAdd64(volatile LONG64 *,LONG64)' already has a body	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3272		
+Error	C2061	syntax error: identifier '__segmentlimit'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3743		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3743		
+Error	C2146	syntax error: missing ')' before identifier 'Selector'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3744		
+Error	C2061	syntax error: identifier 'Selector'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3744		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3745		
+Error	C2146	syntax error: missing ')' before identifier 'Counter'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3757		
+Error	C2061	syntax error: identifier 'Counter'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3757		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3757		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3758		
+Error	C2146	syntax error: missing ')' before identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3781		
+Error	C2061	syntax error: identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3781		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3781		
+Error	C2059	syntax error: ','	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3781		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3784		
+Error	C2146	syntax error: missing ')' before identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3788		
+Error	C2061	syntax error: identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3788		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3788		
+Error	C2059	syntax error: ','	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3788		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3791		
+Error	C2146	syntax error: missing ')' before identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3795		
+Error	C2061	syntax error: identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3795		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3795		
+Error	C2059	syntax error: ','	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3795		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3798		
+Error	C2146	syntax error: missing ')' before identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3818		
+Error	C2061	syntax error: identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3818		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3818		
+Error	C2059	syntax error: ','	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3818		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3821		
+Error	C2146	syntax error: missing ')' before identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3825		
+Error	C2061	syntax error: identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3825		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3825		
+Error	C2059	syntax error: ','	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3825		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3828		
+Error	C2146	syntax error: missing ')' before identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3832		
+Error	C2061	syntax error: identifier 'Destination'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3832		
+Error	C2059	syntax error: ';'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3832		
+Error	C2059	syntax error: ','	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3832		
+Error	C2059	syntax error: ')'	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3835		
+Error	C1003	error count exceeds 100; stopping compilation	ServiceProtector	C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\winnt.h	3835		
