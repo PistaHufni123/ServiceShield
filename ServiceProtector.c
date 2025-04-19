@@ -171,7 +171,9 @@ ServiceProtectorDeviceControl(
         return status;
     }
 
-    switch (irpSp->Parameters.DeviceIoControl.IoControlCode) {
+    ULONG IoControlCode = IoGetCurrentIrpStackLocation(WdfRequestWdmGetIrp(Request))->Parameters.DeviceIoControl.IoControlCode;
+    
+    switch (IoControlCode) {
     case IOCTL_SERVICE_PROTECTOR_SET_TARGET:
         if (inputBufferLength == 0) {
             status = STATUS_INVALID_PARAMETER;
