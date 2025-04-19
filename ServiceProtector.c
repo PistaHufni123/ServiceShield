@@ -166,7 +166,7 @@ ServiceProtectorDeviceControl(
     
     switch (IoControlCode) {
     case IOCTL_SERVICE_PROTECTOR_SET_TARGET:
-        if (inputBufferLength == 0) {
+        if (InputBufferLength == 0) {
             status = STATUS_INVALID_PARAMETER;
             break;
         }
@@ -189,7 +189,7 @@ ServiceProtectorDeviceControl(
             RtlCopyMemory(
                 deviceContext->ServiceInfo.ServiceName, 
                 inputBuffer, 
-                min(inputBufferLength, sizeof(deviceContext->ServiceInfo.ServiceName) - sizeof(WCHAR))
+                min(InputBufferLength, sizeof(deviceContext->ServiceInfo.ServiceName) - sizeof(WCHAR))
             );
             deviceContext->ServiceInfo.ServiceName[MAX_SERVICE_NAME_LENGTH - 1] = L'\0'; // Ensure null termination
         }
