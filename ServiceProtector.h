@@ -33,11 +33,8 @@ Environment:
 // WDF function declarations
 #include <wdfdriver.h>  // For WDF driver functions
 
-// Macros to import KMDF functions
-#define INITGUID
-#include <wdfldr.h>
-// The following line defines WdfFunctions array for WdfDriverGetDevice export
-#pragma comment(lib, "wdfldr.lib")
+// WDF function declarations will be handled via our global device approach
+// No need to include wdfldr.h which is causing inclusion errors
 
 // Additional headers for specific API functions
 #include <ntstrsafe.h>  // String safe functions

@@ -338,7 +338,7 @@ PreOperationCallback(
                 // Log the protection event if access was restricted
                 if (deniedAccess != 0) {
                     SERVICE_PROTECTOR_PRINT(
-                        "Protected process %wZ (PID: %lu) from access 0x%x by process %lu",
+                        "Protected process %ws (PID: %lu) from access 0x%x by process %lu",
                         deviceContext->ServiceInfo.ServiceName,
                         HandleToULong(targetProcessId),
                         deniedAccess,
@@ -429,6 +429,7 @@ ProcessNotifyCallback(
                     }
                     
                     if (nameMatches) {
+                        // ProcessName is a UNICODE_STRING so %wZ is the correct format
                         SERVICE_PROTECTOR_PRINT("Target service process started: %wZ (PID: %lu)",
                             &processName, HandleToULong(ProcessId));
                         
@@ -462,7 +463,7 @@ ProcessNotifyCallback(
             deviceContext->ServiceInfo.TargetProcessId == ProcessId) {
             
             // Our target process has terminated
-            SERVICE_PROTECTOR_PRINT("Target service process terminated: %wZ (PID: %lu)",
+            SERVICE_PROTECTOR_PRINT("Target service process terminated: %ws (PID: %lu)",
                 deviceContext->ServiceInfo.ServiceName, HandleToULong(ProcessId));
             
             deviceContext->ServiceInfo.TargetProcessFound = FALSE;
