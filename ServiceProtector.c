@@ -181,9 +181,23 @@ DriverEntry(
     WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
     attributes.SynchronizationScope = WdfSynchronizationScopeDevice;
 
-    // Additional device initialization
-    WdfDeviceInitSetDeviceType(deviceInit, FILE_DEVICE_UNKNOWN);
-    WdfDeviceInitSetIoType(deviceInit, WdfDeviceIoBuffered);
+    // Additional device initialization with error checking
+    status = WdfDeviceInitSetDeviceType(deviceInit, FILE_DEVICE_UNKNOWN);
+    if (!NT_SUCCESS(status)) {
+        SERVICE_PROTECTOR_PRINT("WdfDeviceInitSetDeviceType failed with status 0x%x", status);
+        WdfDeviceInitFree(deviceInit);
+        return status;
+    }
+
+    status = WdfDeviceInitSetIoType(deviceInit, WdfDeviceIoBuffered);
+    if (!NT_SUCCESS(status)) {
+        SERVICE_PROTECTOR_PRINT("WdfDeviceInitSetIoType failed with status 0x%x", status);
+        WdfDeviceInitFree(deviceInit);
+        return status;
+    }
+
+    // Set exclusive access to prevent multiple opens
+    WdfDeviceInitSetExclusive(deviceInit, TRUE);
 
     SERVICE_PROTECTOR_PRINT("Creating WDF device object");
     status = WdfDeviceCreate(&deviceInit, &attributes, &device);
