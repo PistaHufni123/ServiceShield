@@ -1,3 +1,4 @@
+
 /*++
 *
 *Module Name:
@@ -42,7 +43,3 @@ WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, GetDeviceContext)
 DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_UNLOAD ServiceProtectorEvtDriverUnload;
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL ServiceProtectorEvtIoDeviceControl;
-
-NTSTATUS RegisterCallbacks(_In_ PDEVICE_CONTEXT DeviceContext);
-VOID UnregisterCallbacks(_In_ PDEVICE_CONTEXT DeviceContext);
-OB_PREOP_CALLBACK_STATUS PreOperationCallback(_In_ PVOID RegistrationContext, _Inout_ POB_PRE_OPERATION_INFORMATION PreInfo);
