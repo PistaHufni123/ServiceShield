@@ -109,7 +109,7 @@ DriverEntry(
     // Set additional WDF attributes for the driver
     WDF_OBJECT_ATTRIBUTES driverAttributes;
     WDF_OBJECT_ATTRIBUTES_INIT(&driverAttributes);
-    driverAttributes.SynchronizationScope = WdfSynchronizationScopeDriver;
+    driverAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
 
     // Create the WDF driver object with enhanced error checking
     SERVICE_PROTECTOR_PRINT("Creating WDF driver object");
