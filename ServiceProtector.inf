@@ -11,6 +11,21 @@ DriverVer=01/01/2023,1.0.0.1
 CatalogFile=ServiceProtector.cat
 PnpLockdown=1
 
+[SourceDisksNames.amd64]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles.amd64]
+ServiceProtector.sys = 1,,
+
+; For cross-platform support
+[SourceDisksNames.x86]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles.x86]
+ServiceProtector.sys = 1,,
+
+; Catalog file is automatically generated and doesn't need to be in SourceDisksFiles
+
 [DestinationDirs]
 DefaultDestDir = 12
 
@@ -42,11 +57,7 @@ AddReg=ServiceProtector_Parameters_AddReg
 [ServiceProtector_Parameters_AddReg]
 HKR,Parameters,ServiceToProtect,0x00000000,"spoolsv.exe"
 
-[SourceDisksNames]
-1 = %DiskName%,,,""
-
-[SourceDisksFiles]
-ServiceProtector.sys = 1,,
+; Non-architecture specific sections removed in favor of architecture-specific ones above
 
 [Strings]
 ManufacturerName="ServiceProtector Driver"

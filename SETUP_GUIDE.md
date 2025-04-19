@@ -115,14 +115,31 @@ It's highly recommended to test kernel drivers in a virtual machine to avoid sys
 
 ### Manual Deployment
 
-1. Copy the built driver (.sys file) to the test machine
-2. Copy the ServiceProtector.inf file to the test machine
-3. On the test machine, open an Administrator Command Prompt
-4. Navigate to the directory containing the files
-5. Install the driver:
+1. Generate the catalog file for the driver package:
+   ```
+   Inf2Cat.exe /driver:path_to_driver_folder /os:10_X64,10_X86
+   ```
+
+2. Sign the catalog file (for testing):
+   ```
+   SignTool.exe sign /fd SHA256 /f test_certificate.pfx /p password ServiceProtector.cat
+   ```
+
+3. Copy the built driver (.sys file) to the test machine
+4. Copy the ServiceProtector.inf and ServiceProtector.cat files to the test machine
+5. On the test machine, open an Administrator Command Prompt
+6. Navigate to the directory containing the files
+7. Install the driver:
    ```
    pnputil /add-driver ServiceProtector.inf /install
    ```
+
+**Important Notes on Catalog Files:**
+- The catalog file (ServiceProtector.cat) contains digital signatures that Windows uses to verify driver integrity
+- Do NOT list the .cat file in [SourceDisksFiles] sections of the INF file
+- Do NOT list the .cat file in [YourDriver_CopyFiles] sections of the INF file
+- Only reference the catalog file in the [Version] section via the CatalogFile entry
+- The catalog file should be present in the same directory as the INF file during installation
 
 ### Using Visual Studio Deployment
 
@@ -157,14 +174,55 @@ It's highly recommended to test kernel drivers in a virtual machine to avoid sys
 
 ## Driver Signing for Production
 
-For production deployment, the driver must be signed with a valid certificate:
+For production deployment, the driver must be signed with a valid certificate using SHA256 digest algorithms:
 
-1. Obtain an EV Code Signing Certificate from a trusted CA
-2. Sign the driver using the signtool utility:
+1. Generate a catalog file for the driver package:
    ```
-   signtool sign /v /ac "EVCertCA.cer" /n "Your Company Name" /t http://timestamp.digicert.com ServiceProtector.sys
+   Inf2Cat.exe /driver:path_to_driver_folder /os:10_X64,10_X86,Server10_X64
    ```
-3. Submit the driver to the Windows Hardware Developer Center for WHQL certification (recommended for wide distribution)
+
+2. Ensure the INF file includes a proper CatalogFile entry:
+   ```
+   [Version]
+   Signature="$WINDOWS NT$"
+   Class=System
+   ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
+   Provider=%ManufacturerName%
+   DriverVer=01/01/2023,1.0.0.1
+   CatalogFile=ServiceProtector.cat
+   PnpLockdown=1
+   ```
+
+3. Use architecture-specific Source Disk sections in the INF:
+   ```
+   [SourceDisksNames.amd64]
+   1 = %DiskName%,,,""
+
+   [SourceDisksFiles.amd64]
+   ServiceProtector.sys = 1,,
+
+   [SourceDisksNames.x86]
+   1 = %DiskName%,,,""
+
+   [SourceDisksFiles.x86]
+   ServiceProtector.sys = 1,,
+   ```
+
+4. Obtain an EV Code Signing Certificate from a trusted CA
+
+5. Sign the catalog file using the SHA256 digest algorithm:
+   ```
+   signtool sign /fd SHA256 /v /ac "EVCertCA.cer" /n "Your Company Name" /t http://timestamp.digicert.com ServiceProtector.cat
+   ```
+
+6. For additional security, also sign the driver file itself:
+   ```
+   signtool sign /fd SHA256 /v /ac "EVCertCA.cer" /n "Your Company Name" /t http://timestamp.digicert.com ServiceProtector.sys
+   ```
+
+7. Submit the driver to the Windows Hardware Developer Center for WHQL certification (recommended for wide distribution)
+
+Note: Windows 10 and newer require SHA256 for driver signing. SHA1 is no longer accepted for driver signatures in modern Windows versions.
 
 ## Troubleshooting
 

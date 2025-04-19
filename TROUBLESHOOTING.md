@@ -4,6 +4,47 @@ This document provides solutions for common issues you might encounter when deve
 
 ## Compilation Errors
 
+### Missing PPS_CREATE_NOTIFY_INFO Type Definition
+
+**Error:**
+```
+Error (active) E0020 identifier "PPS_CREATE_NOTIFY_INFO" is undefined
+```
+
+**Solution:**
+This error occurs because the PPS_CREATE_NOTIFY_INFO structure might not be defined in all WDK versions. To fix this issue:
+
+1. Add a custom definition for the PS_CREATE_NOTIFY_INFO structure in your header file:
+
+```c
+// Add to ServiceProtector.h
+// Fix for PPS_CREATE_NOTIFY_INFO definition (required for PsSetCreateProcessNotifyRoutineEx)
+typedef struct _PS_CREATE_NOTIFY_INFO {
+    SIZE_T Size;
+    union {
+        ULONG Flags;
+        struct {
+            ULONG FileOpenNameAvailable : 1;
+            ULONG IsSubsystemProcess : 1;
+            ULONG Reserved : 30;
+        };
+    };
+    HANDLE ParentProcessId;
+    CLIENT_ID CreatingThreadId;
+    struct _FILE_OBJECT *FileObject;
+    PCUNICODE_STRING ImageFileName;
+    PCUNICODE_STRING CommandLine;
+    NTSTATUS CreationStatus;
+} PS_CREATE_NOTIFY_INFO, *PPS_CREATE_NOTIFY_INFO;
+```
+
+2. Ensure proper header inclusion order:
+   - Include ntddk.h before any other headers
+   - Avoid mixing user-mode and kernel-mode headers
+   - Use conditional compilation if needed
+
+3. Verify the WDK documentation for your specific WDK version to ensure the structure matches the expected layout for your target Windows version.
+
 ### Missing WdfDriverGetDevice and RtlUnicodeStringEndsWithString Functions
 
 **Error:**
@@ -282,6 +323,68 @@ This error occurs because the PS_CREATE_NOTIFY_INFO structure and its pointer ty
 
 ## Runtime Errors
 
+### Blue Screen of Death (BSOD) Issues
+
+**Symptoms:**
+- Computer crashes with a blue screen when the driver is loaded
+- BSOD shows error codes like DRIVER_IRQL_NOT_LESS_OR_EQUAL, DRIVER_FAULT, or SYSTEM_SERVICE_EXCEPTION
+- System event log shows crashes in ServiceProtector.sys
+
+**Solutions:**
+
+1. **Buffer handling improvements:**
+   - Add proper NULL pointer checks throughout the code
+   - Implement bounds checking for all array and buffer operations
+   - Add try/except blocks around memory access operations
+   - Always initialize variables to safe default values
+
+   Example for string buffer processing:
+   ```c
+   // Zero out the buffer first
+   RtlZeroMemory(buffer, bufferSize);
+   
+   // Validate the buffer before access
+   if (buffer == NULL || bufferSize < sizeof(WCHAR)) {
+       return STATUS_INVALID_PARAMETER;
+   }
+   
+   // Always ensure NULL termination
+   buffer[bufferSize/sizeof(WCHAR) - 1] = L'\0';
+   ```
+
+2. **Proper exception handling:**
+   - Use structured exception handling (__try/__except/__finally) around critical code
+   - Always release resources in __finally blocks
+   - Use a mutex tracking variable to ensure proper cleanup
+   
+   Example for mutex handling:
+   ```c
+   BOOLEAN mutexAcquired = FALSE;
+   
+   __try {
+       ExAcquireFastMutex(&mutex);
+       mutexAcquired = TRUE;
+       
+       // Critical section code...
+   }
+   __finally {
+       if (mutexAcquired) {
+           ExReleaseFastMutex(&mutex);
+       }
+   }
+   ```
+
+3. **Reliable global device reference:**
+   - Add proper validation of the global device reference
+   - Use interlocked operations for setting/clearing the reference
+   - Add additional NULL checks before dereferencing
+
+4. **Debugging technique for BSOD:**
+   - Enable Driver Verifier for detailed error checking
+   - Use kernel debugger to analyze crash dumps
+   - Set up a kernel-mode debugging session on a test machine
+   - Use WPP tracing to log detailed operations before crash
+
 ### Driver Fails to Load
 
 **Symptoms:**
@@ -335,6 +438,8 @@ This error occurs because the PS_CREATE_NOTIFY_INFO structure and its pointer ty
 **Symptoms:**
 - "Driver not installed" error during installation
 - Error in the setup log related to the INF file
+- "The third-party INF does not contain digital signature information" error
+- "Cannot list CAT files under [SourceDisksFiles]" error
 
 **Solutions:**
 
@@ -343,9 +448,46 @@ This error occurs because the PS_CREATE_NOTIFY_INFO structure and its pointer ty
    - Validate all referenced files exist
    - Use the INF Verification Utility (InfVerif.exe) from the WDK
 
-2. Check driver signing requirements:
+2. Add proper catalog file reference:
+   ```
+   [Version]
+   Signature="$WINDOWS NT$"
+   Class=System
+   ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
+   Provider=%ManufacturerName%
+   DriverVer=01/01/2023,1.0.0.1
+   CatalogFile=ServiceProtector.cat
+   PnpLockdown=1
+   ```
+
+3. Use architecture-specific source disk sections:
+   ```
+   [SourceDisksNames.amd64]
+   1 = %DiskName%,,,""
+
+   [SourceDisksFiles.amd64]
+   ServiceProtector.sys = 1,,
+
+   [SourceDisksNames.x86]
+   1 = %DiskName%,,,""
+
+   [SourceDisksFiles.x86]
+   ServiceProtector.sys = 1,,
+   ```
+
+4. **IMPORTANT: Don't list catalog files in INF file source sections**:
+   - CAT files should *not* be listed in [SourceDisksFiles] sections
+   - CAT files should *not* be listed in [YourDriver_CopyFiles] sections
+   - Catalog files are automatically handled by the installation process
+   - Only reference catalog files in the [Version] section via CatalogFile entry
+
+5. Generate a catalog file:
+   - Run `Inf2Cat.exe /driver:path_to_driver_folder /os:10_X64` to generate a catalog file
+   - Sign the catalog file using `SignTool.exe sign /fd SHA256 /f certificate.pfx /p password ServiceProtector.cat`
+
+6. Check driver signing requirements:
    - Windows 10+ requires drivers to be signed for installation
-   - For development, use test signing mode
+   - For development, use test signing mode with `bcdedit /set testsigning on`
    - For production, obtain proper EV certificate and WHQL certification
 
 ### Access Denied During Installation

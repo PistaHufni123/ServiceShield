@@ -53,6 +53,16 @@ NTKERNELAPI HANDLE PsGetCurrentProcessId(VOID);
 NTKERNELAPI NTSTATUS PsSetCreateProcessNotifyRoutineEx(PCREATE_PROCESS_NOTIFY_ROUTINE_EX NotifyRoutine, BOOLEAN Remove);
 NTKERNELAPI WCHAR NTAPI RtlUpcaseUnicodeChar(WCHAR SourceCharacter);
 
+// Buffer validation function - ProbeForRead is available in kernel mode but add declaration just in case
+#if !defined(PROBE_FOR_READ_DEFINED)
+#define PROBE_FOR_READ_DEFINED
+NTKERNELAPI VOID ProbeForRead(
+    _In_ volatile VOID *Address,
+    _In_ SIZE_T Length,
+    _In_ ULONG Alignment
+);
+#endif
+
 // Fix for PPS_CREATE_NOTIFY_INFO definition (required for PsSetCreateProcessNotifyRoutineEx)
 #if !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
 #define _PS_CREATE_NOTIFY_INFO_DEFINED
@@ -142,7 +152,7 @@ OB_PREOP_CALLBACK_STATUS PreOperationCallback(
 VOID ProcessNotifyCallback(
     _In_ PEPROCESS Process,
     _In_ HANDLE ProcessId,
-    _In_ PPS_CREATE_NOTIFY_INFO CreateInfo
+    _In_ PVOID CreateInfoPtr
 );
 
 // Debug logging macros
