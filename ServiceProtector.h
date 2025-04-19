@@ -16,16 +16,29 @@ Environment:
 
 #pragma once
 
+// Define architecture for kernel compilation
+#define _AMD64_
+
 // For kernel-mode drivers, we should ONLY use kernel headers, not um (user-mode) headers
 // Define target Windows version before including headers
 #define NTDDI_VERSION NTDDI_WIN10_RS1
 #define _WIN32_WINNT 0x0A00  // Windows 10
 
-// Base Windows kernel types and definitions
+// Base Windows kernel types and definitions (order is important)
 #include <ntdef.h>
 #include <wdm.h>
 #include <ntddk.h>
 #include <wdf.h>
+
+// Additional headers for specific API functions
+#include <ntstrsafe.h>  // String safe functions
+#include <ntimage.h>    // NT image functions
+
+// Function declarations for functions we use that might not be in headers
+NTKERNELAPI HANDLE PsGetProcessId(_In_ PEPROCESS Process);
+NTKERNELAPI HANDLE PsGetCurrentProcessId(VOID);
+NTKERNELAPI BOOLEAN RtlUnicodeStringEndsWithString(_In_ PCUNICODE_STRING String, _In_ PCUNICODE_STRING Pattern, _In_ BOOLEAN CaseInSensitive);
+NTKERNELAPI NTSTATUS PsSetCreateProcessNotifyRoutineEx(_In_ PCREATE_PROCESS_NOTIFY_ROUTINE_EX NotifyRoutine, _In_ BOOLEAN Remove);
 
 // Fix for PPS_CREATE_NOTIFY_INFO definition (required for PsSetCreateProcessNotifyRoutineEx)
 #if !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
@@ -48,6 +61,13 @@ typedef struct _PS_CREATE_NOTIFY_INFO {
     NTSTATUS CreationStatus;
 } PS_CREATE_NOTIFY_INFO, *PPS_CREATE_NOTIFY_INFO;
 #endif // !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
+
+// Define the prototype for the process notify routine
+typedef VOID (*PCREATE_PROCESS_NOTIFY_ROUTINE_EX)(
+    _In_ PEPROCESS Process,
+    _In_ HANDLE ProcessId,
+    _In_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo
+);
 
 // Define WPP_ENABLED based on the project settings
 // This will be defined when WPP tracing is enabled in the project

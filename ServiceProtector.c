@@ -93,11 +93,18 @@ DriverEntry(
     }
 
     // Set file object callbacks
+    WDF_FILEOBJECT_CONFIG fileConfig;
+    WDF_FILEOBJECT_CONFIG_INIT(&fileConfig, 
+                               WDF_NO_EVENT_CALLBACK,  // No create callback
+                               WDF_NO_EVENT_CALLBACK,  // No close callback
+                               WDF_NO_EVENT_CALLBACK); // No cleanup callback
+    
+    fileConfig.FileObjectClass = WdfFileObjectCanBeOptional;
+    
     WdfDeviceInitSetFileObjectConfig(
         deviceInit,
-        WDF_NO_OBJECT_ATTRIBUTES,
-        WDF_NO_EVENT_CALLBACK,
-        WdfFileObjectCanBeOptional
+        &fileConfig,
+        WDF_NO_OBJECT_ATTRIBUTES
     );
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
@@ -178,8 +185,8 @@ ServiceProtectorEvtDriverUnload(
 
     SERVICE_PROTECTOR_PRINT("Driver unloading");
 
-    // Get the device context
-    device = WdfGetDriver_Device(Driver);
+    // Get the device context from the driver's FDO
+    device = WdfDriverGetDevice(Driver);
     deviceContext = GetDeviceContext(device);
 
     // Unregister process notifications
@@ -355,7 +362,8 @@ ProcessNotifyCallback(
     // Handle process creation
     if (CreateInfo != NULL) {
         // Get the device context
-        device = WdfGetDriver_Device(WdfGetDriver());
+        WDFDRIVER driver = WdfGetDriver();
+        device = WdfDriverGetDevice(driver);
         if (device == NULL) {
             SERVICE_PROTECTOR_PRINT("Failed to get device from driver");
             return;
@@ -398,7 +406,8 @@ ProcessNotifyCallback(
     // Handle process termination
     else {
         // Get the device context
-        device = WdfGetDriver_Device(WdfGetDriver());
+        WDFDRIVER driver = WdfGetDriver();
+        device = WdfDriverGetDevice(driver);
         if (device == NULL) {
             return;
         }
