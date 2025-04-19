@@ -139,12 +139,20 @@ ServiceProtectorCreateClose(
 // Handle Device Control requests
 NTSTATUS
 ServiceProtectorDeviceControl(
-    _In_ WDFQUEUE Queue,
-    _In_ WDFREQUEST Request,
-    _In_ size_t OutputBufferLength,
-    _In_ size_t InputBufferLength,
-    _In_ ULONG IoControlCode
+    _In_ WDFDEVICE Device,
+    _In_ WDFREQUEST Request
 )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    PDEVICE_CONTEXT deviceContext;
+    PVOID inputBuffer = NULL;
+    size_t inputBufferLength = 0;
+    
+    // Get input buffer length
+    status = WdfRequestGetInputBufferLength(Request, &inputBufferLength);
+    if (!NT_SUCCESS(status)) {
+        return status;
+    }
 {
     NTSTATUS status = STATUS_SUCCESS;
     PDEVICE_CONTEXT deviceContext;
