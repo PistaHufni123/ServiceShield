@@ -28,7 +28,7 @@ DriverEntry(
 {
     NTSTATUS status;
     WDF_DRIVER_CONFIG config;
-    WDFDRIVER driver;
+    WDFDRIVER driver = NULL;
     WDFDEVICE device;
     PDEVICE_CONTEXT deviceContext;
     DECLARE_CONST_UNICODE_STRING(deviceName, L"\\Device\\ServiceProtector");
@@ -38,6 +38,12 @@ DriverEntry(
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
+
+    // Create the driver object
+    status = WdfDriverCreate(DriverObject, RegistryPath, WDF_NO_OBJECT_ATTRIBUTES, &config, &driver);
+    if (!NT_SUCCESS(status)) {
+        return status;
+    }
     
     // Set up driver unload routine
     DriverObject->DriverUnload = ServiceProtectorEvtDriverUnload;
