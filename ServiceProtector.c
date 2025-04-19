@@ -124,7 +124,7 @@ ServiceProtectorEvtDriverUnload(
 // Handle Create/Close requests
 NTSTATUS
 ServiceProtectorCreateClose(
-    _In_ WDFQUEUE Queue,
+    _In_ WDFDEVICE Device,
     _In_ WDFREQUEST Request,
     _In_ WDFFILEOBJECT FileObject
 )
@@ -150,17 +150,16 @@ ServiceProtectorDeviceControl(
     PDEVICE_CONTEXT deviceContext;
     PVOID inputBuffer = NULL;
     
+    UNREFERENCED_PARAMETER(Queue);
     UNREFERENCED_PARAMETER(OutputBufferLength);
     
     // Validate input parameters
     if (InputBufferLength == 0) {
         return STATUS_INVALID_PARAMETER;
     }
-    PVOID inputBuffer = NULL;
-    size_t inputBufferLength = 0;
-    
-    // Get input buffer length
-    status = WdfRequestGetInputBufferLength(Request, &inputBufferLength);
+
+    // Get input buffer
+    status = WdfRequestRetrieveInputBuffer(Request, InputBufferLength, &inputBuffer, NULL);
     if (!NT_SUCCESS(status)) {
         return status;
     }
@@ -176,8 +175,6 @@ ServiceProtectorDeviceControl(
         return status;
     }
 
-    ULONG IoControlCode = IoGetCurrentIrpStackLocation(WdfRequestWdmGetIrp(Request))->Parameters.DeviceIoControl.IoControlCode;
-    
     switch (IoControlCode) {
     case IOCTL_SERVICE_PROTECTOR_SET_TARGET:
         if (inputBufferLength == 0) {
