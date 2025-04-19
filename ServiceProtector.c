@@ -1065,10 +1065,14 @@ ServiceProtectorEvtIoDeviceControl(
 
             // Verify buffer can be read safely
             __try {
-                // ProbeForRead throws an exception if the buffer is invalid
-                ProbeForRead((volatile VOID*)inputBuffer, bufferSize, sizeof(WCHAR));
-                // If we get here, probe succeeded
-                status = STATUS_SUCCESS;
+                if (inputBuffer != NULL && bufferSize > 0) {
+                    // ProbeForRead throws an exception if the buffer is invalid
+                    ProbeForRead(inputBuffer, bufferSize, sizeof(WCHAR));
+                    // If we reach here, the probe succeeded
+                    status = STATUS_SUCCESS;
+                } else {
+                    status = STATUS_INVALID_PARAMETER;
+                }
             } __except(EXCEPTION_EXECUTE_HANDLER) {
                 SERVICE_PROTECTOR_PRINT("Input buffer probe failed");
                 status = STATUS_ACCESS_VIOLATION;
