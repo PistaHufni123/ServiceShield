@@ -30,15 +30,31 @@ Environment:
 #include <ntddk.h>
 #include <wdf.h>
 
+// WDF function declarations
+#include <wdfdriver.h>  // For WDF driver functions
+
+// Macros to import KMDF functions
+#define INITGUID
+#include <wdfldr.h>
+// The following line defines WdfFunctions array for WdfDriverGetDevice export
+#pragma comment(lib, "wdfldr.lib")
+
 // Additional headers for specific API functions
 #include <ntstrsafe.h>  // String safe functions
 #include <ntimage.h>    // NT image functions
 
+// Forward declare the callback type before using it
+typedef VOID (*PCREATE_PROCESS_NOTIFY_ROUTINE_EX)(
+    PEPROCESS Process,
+    HANDLE ProcessId,
+    struct _PS_CREATE_NOTIFY_INFO* CreateInfo
+);
+
 // Function declarations for functions we use that might not be in headers
-NTKERNELAPI HANDLE PsGetProcessId(_In_ PEPROCESS Process);
+NTKERNELAPI HANDLE PsGetProcessId(PEPROCESS Process);
 NTKERNELAPI HANDLE PsGetCurrentProcessId(VOID);
-NTKERNELAPI BOOLEAN RtlUnicodeStringEndsWithString(_In_ PCUNICODE_STRING String, _In_ PCUNICODE_STRING Pattern, _In_ BOOLEAN CaseInSensitive);
-NTKERNELAPI NTSTATUS PsSetCreateProcessNotifyRoutineEx(_In_ PCREATE_PROCESS_NOTIFY_ROUTINE_EX NotifyRoutine, _In_ BOOLEAN Remove);
+NTKERNELAPI NTSTATUS PsSetCreateProcessNotifyRoutineEx(PCREATE_PROCESS_NOTIFY_ROUTINE_EX NotifyRoutine, BOOLEAN Remove);
+NTKERNELAPI WCHAR NTAPI RtlUpcaseUnicodeChar(WCHAR SourceCharacter);
 
 // Fix for PPS_CREATE_NOTIFY_INFO definition (required for PsSetCreateProcessNotifyRoutineEx)
 #if !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
@@ -62,12 +78,7 @@ typedef struct _PS_CREATE_NOTIFY_INFO {
 } PS_CREATE_NOTIFY_INFO, *PPS_CREATE_NOTIFY_INFO;
 #endif // !defined(_PS_CREATE_NOTIFY_INFO_DEFINED)
 
-// Define the prototype for the process notify routine
-typedef VOID (*PCREATE_PROCESS_NOTIFY_ROUTINE_EX)(
-    _In_ PEPROCESS Process,
-    _In_ HANDLE ProcessId,
-    _In_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo
-);
+// PCREATE_PROCESS_NOTIFY_ROUTINE_EX is already defined above
 
 // Define WPP_ENABLED based on the project settings
 // This will be defined when WPP tracing is enabled in the project

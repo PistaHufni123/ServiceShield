@@ -25,6 +25,9 @@ Environment:
 // Add trace headers
 #include "trace.h"
 
+// Global device reference to avoid WdfDriverGetDevice usage
+WDFDEVICE g_Device = NULL;
+
 // The following include is required for WPP tracing
 // This will be auto-generated during compilation by the WPP preprocessor
 #ifdef WPP_ENABLED
@@ -116,6 +119,9 @@ DriverEntry(
         WdfDeviceInitFree(deviceInit);
         return status;
     }
+    
+    // Store the device handle in our global variable
+    g_Device = device;
 
     // Create symbolic link
     status = WdfDeviceCreateSymbolicLink(device, &symbolicLinkName);
@@ -185,8 +191,14 @@ ServiceProtectorEvtDriverUnload(
 
     SERVICE_PROTECTOR_PRINT("Driver unloading");
 
-    // Get the device context from the driver's FDO
-    device = WdfDriverGetDevice(Driver);
+    // Get the device context from the driver
+    // For this driver, we've only created one device, so we'll use a global reference
+    device = g_Device;
+    if (device == NULL) {
+        SERVICE_PROTECTOR_PRINT("No device found for driver");
+        return;
+    }
+    
     deviceContext = GetDeviceContext(device);
 
     // Unregister process notifications
@@ -361,11 +373,10 @@ ProcessNotifyCallback(
 
     // Handle process creation
     if (CreateInfo != NULL) {
-        // Get the device context
-        WDFDRIVER driver = WdfGetDriver();
-        device = WdfDriverGetDevice(driver);
+        // Use our global device reference instead of WdfDriverGetDevice
+        device = g_Device;
         if (device == NULL) {
-            SERVICE_PROTECTOR_PRINT("Failed to get device from driver");
+            SERVICE_PROTECTOR_PRINT("Failed to get device from global reference");
             return;
         }
 
@@ -389,7 +400,35 @@ ProcessNotifyCallback(
                     // Check if the process name ends with the service executable name
                     // This is a simplistic check; in a real-world scenario, you might want to
                     // cross-reference with the Service Control Manager
-                    if (RtlUnicodeStringEndsWithString(&processName, &targetServiceName, TRUE)) {
+                    // Implementation of our own ends-with check since RtlUnicodeStringEndsWithString might not be available
+                    BOOLEAN nameMatches = FALSE;
+                    if (processName.Length >= targetServiceName.Length) {
+                        PCWSTR processSuffix = (PCWSTR)((PCHAR)processName.Buffer + 
+                            (processName.Length - targetServiceName.Length));
+                        
+                        // Compare the suffix - case insensitive comparison
+                        // Upper case both for comparison
+                        WCHAR processTemp[MAX_SERVICE_NAME_LENGTH];
+                        WCHAR targetTemp[MAX_SERVICE_NAME_LENGTH];
+                        
+                        // Make sure we don't overflow our buffer
+                        ULONG copyLength = min(targetServiceName.Length / sizeof(WCHAR), MAX_SERVICE_NAME_LENGTH - 1);
+                        
+                        // Copy and convert to uppercase
+                        for (ULONG i = 0; i < copyLength; i++) {
+                            processTemp[i] = RtlUpcaseUnicodeChar(processSuffix[i]);
+                            targetTemp[i] = RtlUpcaseUnicodeChar(targetServiceName.Buffer[i]);
+                        }
+                        
+                        // Null terminate
+                        processTemp[copyLength] = L'\0';
+                        targetTemp[copyLength] = L'\0';
+                        
+                        // Compare the strings
+                        nameMatches = (wcscmp(processTemp, targetTemp) == 0);
+                    }
+                    
+                    if (nameMatches) {
                         SERVICE_PROTECTOR_PRINT("Target service process started: %wZ (PID: %lu)",
                             &processName, HandleToULong(ProcessId));
                         
@@ -405,9 +444,8 @@ ProcessNotifyCallback(
     }
     // Handle process termination
     else {
-        // Get the device context
-        WDFDRIVER driver = WdfGetDriver();
-        device = WdfDriverGetDevice(driver);
+        // Use our global device reference instead of WdfDriverGetDevice
+        device = g_Device;
         if (device == NULL) {
             return;
         }
