@@ -42,27 +42,27 @@ DriverEntry(
     // Initialize WDF driver
     WDF_OBJECT_ATTRIBUTES driverAttributes;
     WDF_OBJECT_ATTRIBUTES_INIT(&driverAttributes);
-    
+
     status = WdfDriverCreate(
         DriverObject,
         RegistryPath,
         &driverAttributes,        // Use initialized attributes instead of WDF_NO_OBJECT_ATTRIBUTES
         &config,
         &driver);
-    
+
     if (!NT_SUCCESS(status)) {
         KdPrint(("WdfDriverCreate failed with status 0x%x\n", status));
         return status;
     }
-    
+
     // Set up driver unload routine
     DriverObject->DriverUnload = ServiceProtectorEvtDriverUnload;
-    
+
     // Set up IRP handlers if needed
     DriverObject->MajorFunction[IRP_MJ_CREATE] = ServiceProtectorCreateClose;
     DriverObject->MajorFunction[IRP_MJ_CLOSE] = ServiceProtectorCreateClose;
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = ServiceProtectorDeviceControl;
-    
+
     status = IoCreateDevice(
         DriverObject,
         sizeof(DEVICE_CONTEXT),
@@ -72,7 +72,7 @@ DriverEntry(
         FALSE,
         &g_Device
     );
-    
+
     if (!NT_SUCCESS(status)) {
         return status;
     }
@@ -121,82 +121,6 @@ ServiceProtectorEvtDriverUnload(
     UNREFERENCED_PARAMETER(DriverObject);
 }
 
-// Device I/O control handler
-VOID
-ServiceProtectorEvtIoDeviceControl(
-    _In_ WDFQUEUE Queue,
-    _In_ WDFREQUEST Request,
-    _In_ size_t OutputBufferLength,
-    _In_ size_t InputBufferLength,
-    _In_ ULONG IoControlCode
-)
-{
-    NTSTATUS status = STATUS_SUCCESS;
-    WDFDEVICE device = NULL;
-    PDEVICE_CONTEXT deviceContext = NULL;
-    PVOID inputBuffer = NULL;
-    size_t bufferSize = 0;
-
-    UNREFERENCED_PARAMETER(OutputBufferLength);
-
-    if (Queue == NULL || Request == NULL) {
-        status = STATUS_INVALID_PARAMETER;
-        goto Exit;
-    }
-
-    device = WdfIoQueueGetDevice(Queue);
-    if (device == NULL) {
-        status = STATUS_INVALID_DEVICE_REQUEST;
-        goto Exit;
-    }
-
-    deviceContext = GetDeviceContext(device);
-    if (deviceContext == NULL) {
-        status = STATUS_INVALID_DEVICE_REQUEST;
-        goto Exit;
-    }
-
-    switch (IoControlCode) {
-    case IOCTL_SERVICE_PROTECTOR_SET_TARGET:
-        if (InputBufferLength == 0) {
-            status = STATUS_INVALID_PARAMETER;
-            goto Exit;
-        }
-
-        status = WdfRequestRetrieveInputBuffer(
-            Request,
-            InputBufferLength,
-            &inputBuffer,
-            &bufferSize
-        );
-
-        if (!NT_SUCCESS(status) || inputBuffer == NULL) {
-            goto Exit;
-        }
-
-        if (bufferSize > sizeof(deviceContext->ServiceInfo.ServiceName)) {
-            status = STATUS_INVALID_PARAMETER;
-            goto Exit;
-        }
-
-        ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
-        RtlZeroMemory(deviceContext->ServiceInfo.ServiceName, sizeof(deviceContext->ServiceInfo.ServiceName));
-        RtlCopyMemory(deviceContext->ServiceInfo.ServiceName, inputBuffer, bufferSize);
-        ExReleaseFastMutex(&deviceContext->ServiceInfoMutex);
-        break;
-
-    default:
-        status = STATUS_INVALID_DEVICE_REQUEST;
-        break;
-    }
-
-Exit:
-    if (Request != NULL) {
-        WdfRequestComplete(Request, status);
-    }
-}
-
-
 // Handle Create/Close requests
 NTSTATUS
 ServiceProtectorCreateClose(
@@ -228,7 +152,16 @@ ServiceProtectorDeviceControl(
 
     UNREFERENCED_PARAMETER(DeviceObject);
 
+    if (Irp == NULL) {
+        return STATUS_INVALID_PARAMETER;
+    }
+
     irpSp = IoGetCurrentIrpStackLocation(Irp);
+    if (irpSp == NULL) {
+        status = STATUS_INVALID_PARAMETER;
+        goto Exit;
+    }
+
     inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
 
     switch (irpSp->Parameters.DeviceIoControl.IoControlCode) {
@@ -245,11 +178,24 @@ ServiceProtectorDeviceControl(
         }
 
         deviceContext = GetDeviceContext(g_Device);
-        
+        if (deviceContext == NULL) {
+            status = STATUS_INVALID_DEVICE_REQUEST;
+            break;
+        }
+
         ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
-        RtlZeroMemory(deviceContext->ServiceInfo.ServiceName, sizeof(deviceContext->ServiceInfo.ServiceName));
-        RtlCopyMemory(deviceContext->ServiceInfo.ServiceName, inputBuffer, min(inputBufferLength, sizeof(deviceContext->ServiceInfo.ServiceName) - sizeof(WCHAR)));
-        ExReleaseFastMutex(&deviceContext->ServiceInfoMutex);
+        __try {
+            RtlZeroMemory(deviceContext->ServiceInfo.ServiceName, sizeof(deviceContext->ServiceInfo.ServiceName));
+            RtlCopyMemory(
+                deviceContext->ServiceInfo.ServiceName, 
+                inputBuffer, 
+                min(inputBufferLength, sizeof(deviceContext->ServiceInfo.ServiceName) - sizeof(WCHAR))
+            );
+            deviceContext->ServiceInfo.ServiceName[MAX_SERVICE_NAME_LENGTH - 1] = L'\0'; // Ensure null termination
+        }
+        __finally {
+            ExReleaseFastMutex(&deviceContext->ServiceInfoMutex);
+        }
         break;
 
     default:
@@ -257,6 +203,7 @@ ServiceProtectorDeviceControl(
         break;
     }
 
+Exit:
     Irp->IoStatus.Status = status;
     Irp->IoStatus.Information = 0;
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
