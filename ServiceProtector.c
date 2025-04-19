@@ -18,7 +18,12 @@ Environment:
 
 // Add trace headers
 #include "trace.h"
+
+// The following include is required for WPP tracing
+// This will be auto-generated during compilation by the WPP preprocessor
+#ifdef WPP_ENABLED
 #include "ServiceProtector.tmh"
+#endif
 
 // Driver entry point
 NTSTATUS
@@ -40,7 +45,9 @@ DriverEntry(
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, L"\\DosDevices\\ServiceProtector");
 
     // Initialize WPP Tracing
+#ifdef WPP_ENABLED
     WPP_INIT_TRACING(DriverObject, RegistryPath);
+#endif
 
     SERVICE_PROTECTOR_PRINT("Driver initializing");
 
@@ -178,7 +185,9 @@ ServiceProtectorEvtDriverUnload(
     SERVICE_PROTECTOR_PRINT("Driver unloaded successfully");
     
     // Cleanup WPP Tracing
+#ifdef WPP_ENABLED
     WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
+#endif
 }
 
 // Register object callbacks

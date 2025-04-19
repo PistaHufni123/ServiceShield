@@ -21,6 +21,14 @@ Environment:
 #include <wdm.h>
 #include <winnt.h>
 
+// Define WPP_ENABLED based on the project settings
+// This will be defined when WPP tracing is enabled in the project
+#if !defined(WPP_ENABLED)
+    #if defined(EVENT_TRACING)
+        #define WPP_ENABLED 1
+    #endif
+#endif
+
 // Define process access rights if not already defined
 #ifndef PROCESS_TERMINATE
 #define PROCESS_TERMINATE                  (0x0001)
