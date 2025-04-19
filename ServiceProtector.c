@@ -22,6 +22,9 @@
 // Include our driver header with proper include order
 #include "ServiceProtector.h"
 
+// Initialize global safety mode flag
+volatile LONG g_DriverSafetyMode = 0;
+
 // Add trace headers
 #include "trace.h"
 
