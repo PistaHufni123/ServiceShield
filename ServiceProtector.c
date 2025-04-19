@@ -959,8 +959,7 @@ _In_ size_t OutputBufferLength,
     _In_ size_t InputBufferLength,
     _In_ ULONG IoControlCode
 )
-{
-    NTSTATUS status = STATUS_SUCCESS;
+{    NTSTATUS status = STATUS_SUCCESS;
     WDFDEVICE device = NULL;
     PDEVICE_CONTEXT deviceContext = NULL;
     PVOID inputBuffer = NULL;
@@ -1068,7 +1067,7 @@ _In_ size_t OutputBufferLength,
                 // ProbeForRead doesn't return a value, it throws an exception if the buffer is invalid
                 // Cast to volatile VOID* to match the function declaration
                 ProbeForRead((volatile VOID*)inputBuffer, bufferSize, sizeof(WCHAR));
-                // If we get here, ProbeForRead succeeded
+                // If we reach here, the probe succeeded
                 status = STATUS_SUCCESS;
             } __except(EXCEPTION_EXECUTE_HANDLER) {
                 SERVICE_PROTECTOR_PRINT("Input buffer probe failed");
