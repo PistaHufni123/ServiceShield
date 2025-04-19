@@ -37,6 +37,14 @@ volatile LONG g_DriverSafetyMode = 0;
 #include "ServiceProtector.tmh"
 #endif
 
+// Safe wrapper that acts as a fail-safe in case of repeated BSODs
+VOID ActivateSafetyMode(VOID)
+{
+    // Set the global safety flag to disable all callbacks
+    SERVICE_PROTECTOR_PRINT("!!! ACTIVATING DRIVER SAFETY MODE - PROTECTION DISABLED !!!");
+    InterlockedExchange(&g_DriverSafetyMode, 1);
+}
+
 // Helper function for memory validation with fail-safe
 BOOLEAN IsMemoryCorrupted(PVOID Memory, SIZE_T Size) 
 {
@@ -339,14 +347,6 @@ UnregisterCallbacks(
         DeviceContext->ThreadCallback.Registered = FALSE;
         SERVICE_PROTECTOR_PRINT("Thread callbacks unregistered");
     }
-}
-
-// Safe wrapper that acts as a fail-safe in case of repeated BSODs
-VOID ActivateSafetyMode(VOID)
-{
-    // Set the global safety flag to disable all callbacks
-    SERVICE_PROTECTOR_PRINT("!!! ACTIVATING DRIVER SAFETY MODE - PROTECTION DISABLED !!!");
-    InterlockedExchange(&g_DriverSafetyMode, 1);
 }
 
 // Pre-operation callback for handle creation
