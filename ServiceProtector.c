@@ -163,19 +163,6 @@ ServiceProtectorDeviceControl(
     if (!NT_SUCCESS(status)) {
         return status;
     }
-
-    // Validate input parameters
-    if (inputBufferLength == 0) {
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    // Get input buffer
-    status = WdfRequestRetrieveInputBuffer(Request, inputBufferLength, &inputBuffer, NULL);
-    if (!NT_SUCCESS(status)) {
-        return status;
-    }
-
-    ULONG IoControlCode = IoGetCurrentIrpStackLocation(WdfRequestWdmGetIrp(Request))->Parameters.DeviceIoControl.IoControlCode;
     
     switch (IoControlCode) {
     case IOCTL_SERVICE_PROTECTOR_SET_TARGET:
