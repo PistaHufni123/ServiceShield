@@ -38,6 +38,7 @@ typedef struct _DEVICE_CONTEXT {
     FAST_MUTEX ServiceInfoMutex;
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
+// Device context accessor
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, GetDeviceContext)
 
 // Driver function declarations
@@ -45,6 +46,3 @@ DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_UNLOAD ServiceProtectorEvtDriverUnload;
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL ServiceProtectorDeviceControl;
 EVT_WDF_DEVICE_FILE_CREATE ServiceProtectorCreateClose;
-
-// Device context accessor
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, GetDeviceContext);
