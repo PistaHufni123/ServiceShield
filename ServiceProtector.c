@@ -51,7 +51,7 @@ BOOLEAN IsMemoryCorrupted(PVOID Memory, SIZE_T Size)
     if (Memory == NULL || Size == 0) {
         return TRUE; // Consider null memory as corrupted
     }
-    
+
     // Use exception handling to check if memory is accessible
     __try {
         // Read the first and last byte to check boundaries
@@ -157,9 +157,9 @@ DriverEntry(
                                WDF_NO_EVENT_CALLBACK,  // No create callback
                                WDF_NO_EVENT_CALLBACK,  // No close callback
                                WDF_NO_EVENT_CALLBACK); // No cleanup callback
-    
+
     fileConfig.FileObjectClass = WdfFileObjectCanBeOptional;
-    
+
     WdfDeviceInitSetFileObjectConfig(
         deviceInit,
         &fileConfig,
@@ -177,11 +177,18 @@ DriverEntry(
     if (!NT_SUCCESS(status)) {
         SERVICE_PROTECTOR_PRINT("WdfDeviceCreate failed with status 0x%x", status);
         WdfDeviceInitFree(deviceInit);
-        #ifdef DBG
-        DbgPrint("ServiceProtector: Device creation failed with status code: 0x%08X\n", status);
-        #endif
         return status;
     }
+
+    // Verify device creation and initialization
+    if (device == NULL) {
+        SERVICE_PROTECTOR_PRINT("Device creation succeeded but handle is NULL");
+        WdfDeviceInitFree(deviceInit);
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    // Set device characteristics
+    WdfDeviceSetCharacteristics(device, FILE_DEVICE_SECURE_OPEN);
 
     // Verify device initialization
     if (device == NULL) {
@@ -197,7 +204,7 @@ DriverEntry(
         return STATUS_DEVICE_NOT_CONNECTED;
     }
     RtlZeroMemory(deviceContext, sizeof(DEVICE_CONTEXT));
-    
+
     // Store the device handle in our global variable with validation
     if (device != NULL) {
         g_Device = device;
@@ -288,7 +295,7 @@ ServiceProtectorEvtDriverUnload(
         SERVICE_PROTECTOR_PRINT("No device found for driver");
         return;
     }
-    
+
     deviceContext = GetDeviceContext(device);
 
     // Unregister process notifications
@@ -298,7 +305,7 @@ ServiceProtectorEvtDriverUnload(
     UnregisterCallbacks(deviceContext);
 
     SERVICE_PROTECTOR_PRINT("Driver unloaded successfully");
-    
+
     // Cleanup WPP Tracing
 #ifdef WPP_ENABLED
     WPP_CLEANUP(WdfDriverWdmGetDriverObject(Driver));
@@ -389,7 +396,7 @@ PreOperationCallback(
     PEPROCESS targetProcess = NULL;
     HANDLE currentProcessId = NULL;
     BOOLEAN mutexAcquired = FALSE;
-    
+
     // Counter for tracking problems, helps enable safety mode after 
     // encountering multiple exceptions
     static volatile LONG exceptionCounter = 0;
@@ -419,7 +426,7 @@ PreOperationCallback(
             SERVICE_PROTECTOR_PRINT("NULL Object pointer");
             return OB_PREOP_SUCCESS;
         }
-        
+
         // Check for corrupted PreInfo memory structures
         if (IsMemoryCorrupted(PreInfo, sizeof(OB_PRE_OPERATION_INFORMATION))) {
             SERVICE_PROTECTOR_PRINT("PreInfo memory corruption detected");
@@ -430,7 +437,7 @@ PreOperationCallback(
         // Safe access to device context
         __try {
             deviceContext = (PDEVICE_CONTEXT)RegistrationContext;
-            
+
             // Verify context fields to ensure it's valid
             if (deviceContext == NULL ||
                 deviceContext->Device == NULL) {
@@ -445,30 +452,30 @@ PreOperationCallback(
         // Process protection logic - only for process objects
         // Safe comparison for object types
         BOOLEAN isProcessObject = FALSE;
-        
+
         __try {
             isProcessObject = (PreInfo->ObjectType == *PsProcessType);
         } __except(EXCEPTION_EXECUTE_HANDLER) {
             SERVICE_PROTECTOR_PRINT("Exception comparing object types");
             return OB_PREOP_SUCCESS;
         }
-        
+
         if (!isProcessObject) {
             // Not a process object - nothing to do
             return OB_PREOP_SUCCESS;
         }
-        
+
         // Get the process ID with safe exception handling
         __try {
             targetProcess = (PEPROCESS)PreInfo->Object;
-            
+
             if (targetProcess == NULL) {
                 SERVICE_PROTECTOR_PRINT("NULL target process");
                 return OB_PREOP_SUCCESS;
             }
-            
+
             targetProcessId = PsGetProcessId(targetProcess);
-            
+
             if (targetProcessId == NULL) {
                 SERVICE_PROTECTOR_PRINT("NULL process ID");
                 return OB_PREOP_SUCCESS;
@@ -486,57 +493,57 @@ PreOperationCallback(
             SERVICE_PROTECTOR_PRINT("Exception acquiring mutex");
             return OB_PREOP_SUCCESS;
         }
-        
+
         // Main protection logic wrapped in try/finally
         __try {
             // Guard every field access with additional checks
             if (!deviceContext->ServiceInfo.TargetProcessFound) {
                 __leave; // No target to protect
             }
-            
+
             // Verify target process ID before comparison
             if (deviceContext->ServiceInfo.TargetProcessId == NULL) {
                 __leave; // Invalid target process ID
             }
-            
+
             // Safely compare process IDs
             BOOLEAN isTargetProcess = FALSE;
-            
+
             __try {
                 isTargetProcess = (deviceContext->ServiceInfo.TargetProcessId == targetProcessId);
             } __except(EXCEPTION_EXECUTE_HANDLER) {
                 SERVICE_PROTECTOR_PRINT("Exception comparing process IDs");
                 __leave;
             }
-            
+
             if (!isTargetProcess) {
                 __leave; // Not our target process
             }
-            
+
             // This is our protected process
             // Safely check if this is kernel handle
             BOOLEAN isUserModeAccess = FALSE;
-            
+
             __try {
                 isUserModeAccess = (PreInfo->KernelHandle == FALSE);
             } __except(EXCEPTION_EXECUTE_HANDLER) {
                 SERVICE_PROTECTOR_PRINT("Exception checking KernelHandle");
                 __leave;
             }
-            
+
             if (!isUserModeAccess) {
                 __leave; // Kernel handle - allow access
             }
-            
+
             // Safely get current process ID for comparison
             __try {
                 currentProcessId = PsGetCurrentProcessId();
-                
+
                 if (currentProcessId == NULL) {
                     SERVICE_PROTECTOR_PRINT("NULL current process ID");
                     __leave;
                 }
-                
+
                 // Allow access from the process itself
                 if (currentProcessId == targetProcessId) {
                     __leave;
@@ -545,29 +552,29 @@ PreOperationCallback(
                 SERVICE_PROTECTOR_PRINT("Exception getting current process ID");
                 __leave;
             }
-            
+
             // User-mode access from another process - check parameters
             BOOLEAN hasValidParameters = FALSE;
-            
+
             __try {
                 hasValidParameters = (PreInfo->Parameters != NULL);
             } __except(EXCEPTION_EXECUTE_HANDLER) {
                 SERVICE_PROTECTOR_PRINT("Exception accessing Parameters");
                 __leave;
             }
-            
+
             if (!hasValidParameters) {
                 SERVICE_PROTECTOR_PRINT("NULL Parameters");
                 __leave;
             }
-            
+
             // Safely get the desired access pointer within exception handling
             __try {
                 ULONG operation = 0;
-                
+
                 // First safely read the operation value
                 operation = PreInfo->Operation;
-                
+
                 // Check operation type
                 if (operation == OB_OPERATION_HANDLE_CREATE) {
                     // Verify the field exists before accessing
@@ -589,16 +596,16 @@ PreOperationCallback(
                 SERVICE_PROTECTOR_PRINT("Exception getting desired access");
                 __leave;
             }
-            
+
             // Only proceed if we have a valid access mask pointer
             if (desiredAccess == NULL) {
                 __leave;
             }
-            
+
             // Determine which access rights to deny
             __try {
                 deniedAccess = 0;
-                
+
                 // Prevent process termination
                 if (*desiredAccess & PROCESS_TERMINATE) {
                     deniedAccess |= PROCESS_TERMINATE;
@@ -623,7 +630,7 @@ PreOperationCallback(
                 __try {
                     // Log with safe access to service name
                     WCHAR safeServiceName[MAX_SERVICE_NAME_LENGTH] = L"<unknown>";
-                    
+
                     // Safely copy service name with bounds checking
                     if (deviceContext->ServiceInfo.ServiceName[0] != L'\0') {
                         wcsncpy(safeServiceName, 
@@ -631,7 +638,7 @@ PreOperationCallback(
                                 MAX_SERVICE_NAME_LENGTH - 1);
                         safeServiceName[MAX_SERVICE_NAME_LENGTH - 1] = L'\0';
                     }
-                    
+
                     SERVICE_PROTECTOR_PRINT(
                         "Protected process %ws (PID: %lu) from access 0x%x by process %lu",
                         safeServiceName,
@@ -685,7 +692,7 @@ ProcessNotifyCallback(
     UNICODE_STRING processName = {0};
     UNICODE_STRING targetServiceName = {0};
     BOOLEAN mutexAcquired = FALSE;
-    
+
     // Counter for tracking problems - helps detect recurring issues
     static volatile LONG processCallbackExceptionCounter = 0;
 
@@ -697,7 +704,7 @@ ProcessNotifyCallback(
 
     // Avoid using Process parameter directly as it might be unreliable
     UNREFERENCED_PARAMETER(Process);
-    
+
     __try {
         // Track problems and activate safety mode if we have too many exceptions
         if (InterlockedIncrement(&processCallbackExceptionCounter) > 5) {
@@ -708,11 +715,11 @@ ProcessNotifyCallback(
         if (CreateInfoPtr != NULL) {
             // Cast the CreateInfoPtr to our custom structure type with validation
             PPS_CREATE_NOTIFY_INFO CreateInfo = NULL;
-            
+
             // Use exception handling to protect against invalid pointers
             __try {
                 CreateInfo = (PPS_CREATE_NOTIFY_INFO)CreateInfoPtr;
-                
+
                 // Verify structure size as basic sanity check
                 if (CreateInfo->Size < sizeof(PS_CREATE_NOTIFY_INFO)) {
                     SERVICE_PROTECTOR_PRINT("Invalid CreateInfo size: %zu", CreateInfo->Size);
@@ -722,119 +729,119 @@ ProcessNotifyCallback(
                 SERVICE_PROTECTOR_PRINT("Exception accessing CreateInfo structure");
                 __leave;
             }
-            
+
             // Validate CreateInfo after safe access check
             if (CreateInfo == NULL) {
                 SERVICE_PROTECTOR_PRINT("CreateInfo is NULL after validation");
                 __leave;
             }
-            
+
             // Use our global device reference instead of WdfDriverGetDevice
             device = g_Device;
             if (device == NULL) {
                 SERVICE_PROTECTOR_PRINT("Failed to get device from global reference");
                 __leave; // Jump to finally block
             }
-    
+
             deviceContext = GetDeviceContext(device);
             if (deviceContext == NULL) {
                 SERVICE_PROTECTOR_PRINT("Failed to get device context");
                 __leave;
             }
-    
+
             // Validate the CreateInfo structure and its fields
             if (CreateInfo->ImageFileName == NULL) {
                 SERVICE_PROTECTOR_PRINT("NULL ImageFileName");
                 __leave;
             }
-            
+
             // Check for memory corruption in the CreateInfo structure
             if (IsMemoryCorrupted(CreateInfo, CreateInfo->Size)) {
                 SERVICE_PROTECTOR_PRINT("CreateInfo memory corruption detected");
                 __leave;
             }
-            
+
             // Check if this is the target service - first acquire the mutex
             ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
             mutexAcquired = TRUE;
-            
+
             // Check if we have a valid service name to protect
             if (deviceContext->ServiceInfo.ServiceName[0] == L'\0') {
                 SERVICE_PROTECTOR_PRINT("No target service name set");
                 __leave;
             }
-            
+
             // Initialize target service name string
             RtlInitUnicodeString(&targetServiceName, deviceContext->ServiceInfo.ServiceName);
-            
+
             // Validate image filename buffer
             if (CreateInfo->ImageFileName->Buffer == NULL) {
                 SERVICE_PROTECTOR_PRINT("NULL ImageFileName Buffer");
                 __leave;
             }
-            
+
             // Process the image filename
             processName = *CreateInfo->ImageFileName;
             if (processName.Length == 0 || processName.Buffer == NULL) {
                 SERVICE_PROTECTOR_PRINT("Empty process name");
                 __leave;
             }
-            
+
             // Check if the process name ends with the service executable name
             BOOLEAN nameMatches = FALSE;
-            
+
             // Prevent integer overflow/underflow in length calculations
             if (processName.Length < targetServiceName.Length) {
                 // Process name is too short to match the target
                 __leave;
             }
-            
+
             // Calculate pointer to the suffix with proper bounds checking
             SIZE_T suffixOffset = processName.Length - targetServiceName.Length;
             if (suffixOffset > processName.Length) {
                 SERVICE_PROTECTOR_PRINT("Invalid suffix offset calculation");
                 __leave; // Integer overflow, bail out
             }
-            
+
             PCWSTR processSuffix = (PCWSTR)((PCHAR)processName.Buffer + suffixOffset);
-            
+
             // Validate the suffix pointer is within bounds
             if ((ULONG_PTR)processSuffix < (ULONG_PTR)processName.Buffer || 
                 (ULONG_PTR)processSuffix >= (ULONG_PTR)processName.Buffer + processName.Length) {
                 SERVICE_PROTECTOR_PRINT("Suffix pointer out of bounds");
                 __leave;
             }
-            
+
             // Compare the suffix - case insensitive comparison
             // Upper case both for comparison
             WCHAR processTemp[MAX_SERVICE_NAME_LENGTH] = {0};
             WCHAR targetTemp[MAX_SERVICE_NAME_LENGTH] = {0};
-            
+
             // Check for null pointers again
             if (processSuffix == NULL || targetServiceName.Buffer == NULL) {
                 SERVICE_PROTECTOR_PRINT("NULL buffer for string comparison");
                 __leave;
             }
-            
+
             // Buffer size safety calculations
             ULONG maxCopyChars = MAX_SERVICE_NAME_LENGTH - 1;
             ULONG targetChars = targetServiceName.Length / sizeof(WCHAR);
-            
+
             // Avoid integer overflow in the division
             if (targetServiceName.Length <= 0 || targetChars * sizeof(WCHAR) != targetServiceName.Length) {
                 SERVICE_PROTECTOR_PRINT("Invalid target name length: %d", targetServiceName.Length);
                 __leave;
             }
-            
+
             // Use the smaller of the two to prevent buffer overflows
             ULONG copyLength = (targetChars < maxCopyChars) ? targetChars : maxCopyChars;
-            
+
             // Final validation before copying
             if (copyLength == 0 || copyLength > MAX_SERVICE_NAME_LENGTH - 1) {
                 SERVICE_PROTECTOR_PRINT("Invalid copy length: %u", copyLength);
                 __leave;
             }
-            
+
             // Safe copy with character validation
             for (ULONG i = 0; i < copyLength; i++) {
                 // Bounds checking for each character
@@ -843,33 +850,33 @@ ProcessNotifyCallback(
                     SERVICE_PROTECTOR_PRINT("Character access out of bounds");
                     __leave;
                 }
-                
+
                 // Copy characters with validation
                 WCHAR procChar = processSuffix[i];
                 WCHAR targChar = targetServiceName.Buffer[i];
-                
+
                 // Check for invalid characters
                 if (procChar == 0 || targChar == 0) {
                     // Early termination found
                     break;
                 }
-                
+
                 processTemp[i] = RtlUpcaseUnicodeChar(procChar);
                 targetTemp[i] = RtlUpcaseUnicodeChar(targChar);
             }
-            
+
             // Ensure null termination
             processTemp[copyLength] = L'\0';
             targetTemp[copyLength] = L'\0';
-            
+
             // Compare the strings
             nameMatches = (wcscmp(processTemp, targetTemp) == 0);
-            
+
             if (nameMatches) {
                 // ProcessName is a UNICODE_STRING so %wZ is the correct format
                 SERVICE_PROTECTOR_PRINT("Target service process started: %wZ (PID: %lu)",
                     &processName, HandleToULong(ProcessId));
-                
+
                 // Mark this process as our target for protection
                 deviceContext->ServiceInfo.TargetProcessFound = TRUE;
                 deviceContext->ServiceInfo.TargetProcessId = ProcessId;
@@ -883,24 +890,24 @@ ProcessNotifyCallback(
                 SERVICE_PROTECTOR_PRINT("Failed to get device from global reference (termination)");
                 __leave;
             }
-    
+
             deviceContext = GetDeviceContext(device);
             if (deviceContext == NULL) {
                 SERVICE_PROTECTOR_PRINT("Failed to get device context (termination)");
                 __leave;
             }
-    
+
             // Check if this is our target process
             ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
             mutexAcquired = TRUE;
-            
+
             if (deviceContext->ServiceInfo.TargetProcessFound &&
                 deviceContext->ServiceInfo.TargetProcessId == ProcessId) {
-                
+
                 // Our target process has terminated
                 SERVICE_PROTECTOR_PRINT("Target service process terminated: %ws (PID: %lu)",
                     deviceContext->ServiceInfo.ServiceName, HandleToULong(ProcessId));
-                
+
                 deviceContext->ServiceInfo.TargetProcessFound = FALSE;
                 deviceContext->ServiceInfo.TargetProcessId = NULL;
             }
@@ -930,7 +937,7 @@ ServiceProtectorEvtIoDeviceControl(
     PVOID inputBuffer = NULL;
     size_t bufferSize = 0;
     BOOLEAN mutexAcquired = FALSE;
-    
+
     // Safety mode detection and tracking
     static volatile LONG ioctlExceptionCounter = 0;
 
@@ -1005,7 +1012,7 @@ ServiceProtectorEvtIoDeviceControl(
                 status = STATUS_INVALID_PARAMETER;
                 __leave;
             }
-            
+
             // Advanced memory corruption detection beyond ProbeForRead
             if (IsMemoryCorrupted(inputBuffer, bufferSize)) {
                 SERVICE_PROTECTOR_PRINT("Memory corruption detected in input buffer");
@@ -1041,33 +1048,33 @@ ServiceProtectorEvtIoDeviceControl(
             // Update the target service name within a controlled try/finally
             ExAcquireFastMutex(&deviceContext->ServiceInfoMutex);
             mutexAcquired = TRUE;
-            
+
             // Reset current target
             deviceContext->ServiceInfo.TargetProcessFound = FALSE;
             deviceContext->ServiceInfo.TargetProcessId = NULL;
-            
+
             // Zero out the destination buffer first for safety
             RtlZeroMemory(deviceContext->ServiceInfo.ServiceName, sizeof(deviceContext->ServiceInfo.ServiceName));
-            
+
             // Calculate safe limits for copying
             size_t maxChars = (sizeof(deviceContext->ServiceInfo.ServiceName) / sizeof(WCHAR)) - 1;
-            
+
             // Check for division overflow
             if (maxChars * sizeof(WCHAR) > sizeof(deviceContext->ServiceInfo.ServiceName)) {
                 SERVICE_PROTECTOR_PRINT("Calculation overflow in character limits");
                 status = STATUS_INTEGER_OVERFLOW;
                 __leave;
             }
-            
+
             // Calculate input character count with validation
             if (bufferSize % sizeof(WCHAR) != 0) {
                 SERVICE_PROTECTOR_PRINT("Input buffer size is not a multiple of WCHAR size");
                 status = STATUS_INVALID_PARAMETER;
                 __leave;
             }
-            
+
             size_t inputChars = bufferSize / sizeof(WCHAR);
-            
+
             // Perform a character-by-character copy with extensive validation
             for (size_t i = 0; i < inputChars && i < maxChars; i++) {
                 // Verify each character access is valid
@@ -1076,10 +1083,10 @@ ServiceProtectorEvtIoDeviceControl(
                     status = STATUS_INVALID_PARAMETER;
                     __leave;
                 }
-                
+
                 // Read character with validation
                 WCHAR currentChar;
-                
+
                 try {
                     // Try to safely read the character
                     currentChar = ((PWCHAR)inputBuffer)[i];
@@ -1088,19 +1095,19 @@ ServiceProtectorEvtIoDeviceControl(
                     status = STATUS_ACCESS_VIOLATION;
                     __leave;
                 }
-                
+
                 if (currentChar == L'\0') {
                     // Found null terminator - we're done
                     break;
                 }
-                
+
                 // Safe copy of the validated character
                 deviceContext->ServiceInfo.ServiceName[i] = currentChar;
             }
-            
+
             // Explicitly ensure null termination
             deviceContext->ServiceInfo.ServiceName[maxChars] = L'\0';
-            
+
             // Success, log the new service name
             SERVICE_PROTECTOR_PRINT("Target service set to: %ws", deviceContext->ServiceInfo.ServiceName);
             break;
