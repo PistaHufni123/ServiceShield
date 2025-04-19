@@ -21,19 +21,6 @@
 #include <ntddk.h>
 #include <wdf.h>
 
-// Debug print macros
-#ifdef DBG
-#define SERVICE_PROTECTOR_PRINT(fmt, ...) \
-    DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, \
-               "ServiceProtector: " fmt "\n", ##__VA_ARGS__)
-#else
-#define SERVICE_PROTECTOR_PRINT(fmt, ...)
-#endif
-
-// Global safety mode flag
-extern volatile LONG g_DriverSafetyMode;
-
-// Maximum length for service name
 #define MAX_SERVICE_NAME_LENGTH 256
 #define IOCTL_SERVICE_PROTECTOR_SET_TARGET CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
 

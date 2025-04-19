@@ -85,7 +85,6 @@ DriverEntry(
     NTSTATUS status;
     WDF_DRIVER_CONFIG config;
     WDFDRIVER driver;
-    PWDFDEVICE_INIT deviceInit;
     WDFDEVICE device;
     PDEVICE_CONTEXT deviceContext;
     DECLARE_CONST_UNICODE_STRING(deviceName, L"\\Device\\ServiceProtector");
@@ -108,7 +107,7 @@ DriverEntry(
         return status;
     }
 
-    deviceInit = WdfControlDeviceInitAllocate(driver, &SDDL_DEVOBJ_SYS_ALL_ADM_ALL);
+    PWDFDEVICE_INIT deviceInit = WdfControlDeviceInitAllocate(driver, &SDDL_DEVOBJ_SYS_ALL_ADM_ALL);
     if (deviceInit == NULL) {
         return STATUS_INSUFFICIENT_RESOURCES;
     }
@@ -186,14 +185,7 @@ RegisterCallbacks(
     callbackRegistration.RegistrationContext = DeviceContext;
     callbackRegistration.OperationRegistration = &operationRegistration;
 
-    NTSTATUS status = ObRegisterCallbacks(&callbackRegistration, &DeviceContext->RegistrationHandle);
-    if (NT_SUCCESS(status)) {
-        SERVICE_PROTECTOR_PRINT("Object callbacks registered successfully");
-    }
-    else {
-        SERVICE_PROTECTOR_PRINT("ObRegisterCallbacks failed with status 0x%x", status);
-    }
-    return status;
+    return ObRegisterCallbacks(&callbackRegistration, &DeviceContext->RegistrationHandle);
 }
 
 // Unregister callbacks
@@ -223,7 +215,6 @@ PreOperationCallback(
 
         if (deviceContext->ServiceInfo.TargetProcessFound &&
             deviceContext->ServiceInfo.TargetProcessId == PsGetProcessId((PEPROCESS)PreInfo->Object)) {
-
             ACCESS_MASK deniedAccess = PROCESS_TERMINATE | PROCESS_VM_WRITE | PROCESS_SUSPEND_RESUME;
             PreInfo->Parameters->CreateHandleInformation.DesiredAccess &= ~deniedAccess;
         }
