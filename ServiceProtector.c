@@ -124,12 +124,12 @@ ServiceProtectorEvtDriverUnload(
 // Handle Create/Close requests
 NTSTATUS
 ServiceProtectorCreateClose(
-    _In_ WDFQUEUE Queue,
+    _In_ WDFDEVICE Device,
     _In_ WDFREQUEST Request,
     _In_ WDFFILEOBJECT FileObject
 )
 {
-    UNREFERENCED_PARAMETER(Queue);
+    UNREFERENCED_PARAMETER(Device);
     UNREFERENCED_PARAMETER(FileObject);
 
     WdfRequestComplete(Request, STATUS_SUCCESS);
