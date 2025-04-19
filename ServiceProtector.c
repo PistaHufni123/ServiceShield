@@ -40,13 +40,13 @@ DriverEntry(
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
 
     // Initialize WDF driver
-    WDF_OBJECT_ATTRIBUTES attributes;
-    WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+    WDF_OBJECT_ATTRIBUTES driverAttributes;
+    WDF_OBJECT_ATTRIBUTES_INIT(&driverAttributes);
     
     status = WdfDriverCreate(
         DriverObject,
         RegistryPath,
-        &attributes,        // Use initialized attributes instead of WDF_NO_OBJECT_ATTRIBUTES
+        &driverAttributes,        // Use initialized attributes instead of WDF_NO_OBJECT_ATTRIBUTES
         &config,
         &driver);
     
@@ -88,10 +88,10 @@ DriverEntry(
         return status;
     }
 
-    WDF_OBJECT_ATTRIBUTES attributes;
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&attributes, DEVICE_CONTEXT);
+    WDF_OBJECT_ATTRIBUTES deviceAttributes;
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
-    status = WdfDeviceCreate(&deviceInit, &attributes, &device);
+    status = WdfDeviceCreate(&deviceInit, &deviceAttributes, &device);
     if (!NT_SUCCESS(status)) {
         WdfDeviceInitFree(deviceInit);
         return status;
