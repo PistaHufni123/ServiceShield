@@ -160,16 +160,31 @@ DriverEntry(
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
-    // Create the device
+    // Create the device with enhanced error handling
     status = WdfDeviceCreate(&deviceInit, &deviceAttributes, &device);
     if (!NT_SUCCESS(status)) {
         SERVICE_PROTECTOR_PRINT("WdfDeviceCreate failed with status 0x%x", status);
         WdfDeviceInitFree(deviceInit);
+        #ifdef DBG
+        DbgPrint("ServiceProtector: Device creation failed with status code: 0x%08X\n", status);
+        #endif
         return status;
     }
     
-    // Store the device handle in our global variable
-    g_Device = device;
+    // Store the device handle in our global variable with validation
+    if (device != NULL) {
+        g_Device = device;
+        SERVICE_PROTECTOR_PRINT("Device created successfully");
+    } else {
+        SERVICE_PROTECTOR_PRINT("Device handle is NULL after creation");
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    // Verify device was created properly
+    if (g_Device == NULL) {
+        SERVICE_PROTECTOR_PRINT("Global device handle is NULL");
+        return STATUS_DEVICE_NOT_CONNECTED;
+    }
 
     // Create symbolic link
     status = WdfDeviceCreateSymbolicLink(device, &symbolicLinkName);
