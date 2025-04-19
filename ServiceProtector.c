@@ -38,9 +38,6 @@ DriverEntry(
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
-
-    // Initialize driver without using WDF function table directly
-    NTSTATUS status = STATUS_SUCCESS;
     
     // Set up driver unload routine
     DriverObject->DriverUnload = ServiceProtectorEvtDriverUnload;
@@ -49,10 +46,6 @@ DriverEntry(
     DriverObject->MajorFunction[IRP_MJ_CREATE] = ServiceProtectorCreateClose;
     DriverObject->MajorFunction[IRP_MJ_CLOSE] = ServiceProtectorCreateClose;
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = ServiceProtectorDeviceControl;
-
-    // Create the device object
-    UNICODE_STRING deviceName;
-    RtlInitUnicodeString(&deviceName, L"\\Device\\ServiceProtector");
     
     status = IoCreateDevice(
         DriverObject,
@@ -106,10 +99,10 @@ DriverEntry(
 // Driver unload handler
 VOID
 ServiceProtectorEvtDriverUnload(
-    _In_ WDFDRIVER Driver
+    _In_ PDRIVER_OBJECT DriverObject
 )
 {
-    UNREFERENCED_PARAMETER(Driver);
+    UNREFERENCED_PARAMETER(DriverObject);
 }
 
 // Device I/O control handler
