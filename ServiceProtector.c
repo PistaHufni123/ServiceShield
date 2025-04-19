@@ -139,7 +139,7 @@ ServiceProtectorCreateClose(
 // Handle Device Control requests
 NTSTATUS
 ServiceProtectorDeviceControl(
-    _In_ WDFQUEUE Queue,
+    _In_ WDFDEVICE Device,
     _In_ WDFREQUEST Request,
     _In_ size_t OutputBufferLength,
     _In_ size_t InputBufferLength,
