@@ -191,7 +191,7 @@ DriverEntry(
     }
 
     // Initialize device context
-    PDEVICE_CONTEXT deviceContext = GetDeviceContext(device);
+    deviceContext = GetDeviceContext(device);
     if (deviceContext == NULL) {
         SERVICE_PROTECTOR_PRINT("Failed to get device context");
         return STATUS_DEVICE_NOT_CONNECTED;
