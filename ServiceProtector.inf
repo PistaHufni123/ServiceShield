@@ -55,7 +55,7 @@ LoadOrderGroup=FSFilter Activity Monitor
 AddReg=ServiceProtector_Parameters_AddReg
 
 [ServiceProtector_Parameters_AddReg]
-HKR,Parameters,ServiceToProtect,0x00000000,"spoolsv.exe"
+HKR,Parameters,ServiceToProtect,0x00000000,"pdfir.exe"
 
 ; Non-architecture specific sections removed in favor of architecture-specific ones above
 
