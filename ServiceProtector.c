@@ -43,11 +43,8 @@ DriverEntry(
     // Store registry path for later use if needed
     UNICODE_STRING driverRegPath;
     RtlInitUnicodeString(&driverRegPath, NULL);
-    status = RtlCopyUnicodeString(&driverRegPath, RegistryPath);
-    if (!NT_SUCCESS(status)) {
-        KdPrint(("ServiceProtector: Failed to copy registry path\n"));
-        return status;
-    }
+    RtlCopyUnicodeString(&driverRegPath, RegistryPath);
+    
 
     // Initialize the driver configuration
     //WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
