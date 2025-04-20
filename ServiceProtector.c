@@ -44,7 +44,7 @@ DriverEntry(
     }
 
     // Initialize the driver configuration
-    WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
+    //WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
