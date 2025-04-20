@@ -34,12 +34,19 @@ DriverEntry(
     DECLARE_CONST_UNICODE_STRING(deviceName, L"\\Device\\ServiceProtector");
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, L"\\DosDevices\\ServiceProtector");
 
+    // Validate RegistryPath
+    if (RegistryPath == NULL || RegistryPath->Length == 0 || RegistryPath->Buffer == NULL) {
+        KdPrint(("ServiceProtector: Invalid RegistryPath parameter\n"));
+        return STATUS_INVALID_PARAMETER;
+    }
+
     // Store registry path for later use if needed
     UNICODE_STRING driverRegPath;
     status = RtlDuplicateUnicodeString(RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE, 
                                       RegistryPath, 
                                       &driverRegPath);
     if (!NT_SUCCESS(status)) {
+        KdPrint(("ServiceProtector: Failed to duplicate registry path\n"));
         return status;
     }
 
