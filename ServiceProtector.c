@@ -42,7 +42,7 @@ DriverEntry(
 
     // Store registry path for later use if needed
     UNICODE_STRING driverRegPath;
-    status = RtlDuplicateUnicodeString(RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE, 
+    status = RtlDuplicateUnicodeString(0x00000002L,  // RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE value
                                       RegistryPath, 
                                       &driverRegPath);
     if (!NT_SUCCESS(status)) {
