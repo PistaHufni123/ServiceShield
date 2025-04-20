@@ -35,18 +35,19 @@ DriverEntry(
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, L"\\DosDevices\\ServiceProtector");
 
     // Initialize the driver configuration
+    WDF_DRIVER_CONFIG config;
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
 
-    // Initialize WDF driver
-    WDF_OBJECT_ATTRIBUTES driverAttributes;
-    WDF_OBJECT_ATTRIBUTES_INIT(&driverAttributes);
+    // Initialize WDF driver attributes
+    WDF_OBJECT_ATTRIBUTES attributes;
+    WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
 
     status = WdfDriverCreate(
         DriverObject,
         RegistryPath,
-        &driverAttributes,        // Use initialized attributes instead of WDF_NO_OBJECT_ATTRIBUTES
+        &attributes,
         &config,
         &driver);
 
