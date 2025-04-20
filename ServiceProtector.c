@@ -42,11 +42,10 @@ DriverEntry(
 
     // Store registry path for later use if needed
     UNICODE_STRING driverRegPath;
-    status = RtlDuplicateUnicodeString(0x00000002L,  // RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE value
-                                      RegistryPath, 
-                                      &driverRegPath);
+    RtlInitUnicodeString(&driverRegPath, NULL);
+    status = RtlCopyUnicodeString(&driverRegPath, RegistryPath);
     if (!NT_SUCCESS(status)) {
-        KdPrint(("ServiceProtector: Failed to duplicate registry path\n"));
+        KdPrint(("ServiceProtector: Failed to copy registry path\n"));
         return status;
     }
 
