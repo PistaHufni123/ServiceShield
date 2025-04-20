@@ -34,8 +34,17 @@ DriverEntry(
     DECLARE_CONST_UNICODE_STRING(deviceName, L"\\Device\\ServiceProtector");
     DECLARE_CONST_UNICODE_STRING(symbolicLinkName, L"\\DosDevices\\ServiceProtector");
 
+    // Store registry path for later use if needed
+    UNICODE_STRING driverRegPath;
+    status = RtlDuplicateUnicodeString(RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE, 
+                                      RegistryPath, 
+                                      &driverRegPath);
+    if (!NT_SUCCESS(status)) {
+        return status;
+    }
+
     // Initialize the driver configuration
-    WDF_DRIVER_CONFIG config;
+    WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.EvtDriverUnload = ServiceProtectorEvtDriverUnload;
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
